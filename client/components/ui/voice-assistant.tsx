@@ -199,15 +199,15 @@ export function VoiceAssistant({
   const getButtonStyle = () => {
     switch (state) {
       case "listening":
-        return "mic-listening scale-110";
+        return "voice-listening";
       case "processing":
-        return "bg-gradient-to-r from-blue-500 to-cyan-500 scale-105";
+        return "voice-processing";
       case "success":
-        return "bg-gradient-to-r from-green-500 to-emerald-500 scale-105";
+        return "voice-success";
       case "error":
-        return "bg-gradient-to-r from-red-500 to-pink-500 scale-105";
+        return "voice-error";
       default:
-        return "bg-gradient-to-r from-purple-500 to-violet-500 hover:from-purple-600 hover:to-violet-600";
+        return "voice-idle apple-button";
     }
   };
 
@@ -238,9 +238,9 @@ export function VoiceAssistant({
     <div
       className={cn(
         "fixed bottom-6 right-6 z-50",
-        "glass rounded-2xl p-4 min-w-[200px] max-w-[350px]",
-        "animate-float",
-        "transition-all duration-300",
+        "glass-thick rounded-2xl p-5 min-w-[220px] max-w-[380px]",
+        "animate-float-gentle apple-card",
+        "transition-all duration-500 ease-out",
         (state === "listening" || state === "processing") && "scale-105",
         className,
       )}
@@ -250,9 +250,9 @@ export function VoiceAssistant({
           onClick={toggleListening}
           disabled={!isAvailable || state === "processing"}
           className={cn(
-            "relative w-12 h-12 rounded-full transition-all duration-300",
-            "flex items-center justify-center flex-shrink-0",
-            "shadow-lg hover:shadow-xl",
+            "relative w-14 h-14 rounded-full transition-all duration-300",
+            "flex items-center justify-center flex-shrink-0 fab",
+            "haptic-medium shadow-glass",
             getButtonStyle(),
             (!isAvailable || state === "processing") &&
               "opacity-50 cursor-not-allowed",
@@ -261,35 +261,35 @@ export function VoiceAssistant({
           {getButtonContent()}
         </button>
 
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center space-x-2 mb-1">
-            <span className="text-lg">{getStatusIcon()}</span>
-            <span className="text-sm font-medium text-foreground truncate">
+        <div className="flex-1 min-w-0 ml-1">
+          <div className="flex items-center space-x-2 mb-2">
+            <span className="text-xl">{getStatusIcon()}</span>
+            <span className="text-sm font-semibold text-foreground truncate font-display">
               Voice Assistant
             </span>
           </div>
 
-          <div className="text-xs text-muted-foreground leading-tight">
+          <div className="text-sm text-muted-foreground leading-relaxed font-medium">
             {getStatusText()}
           </div>
 
           {state === "listening" && (
-            <div className="flex space-x-1 mt-2">
+            <div className="flex space-x-1.5 mt-3">
               <div
-                className="w-1 h-3 bg-purple-500 rounded-full animate-pulse"
+                className="w-1 h-3 bg-primary rounded-full animate-bounce-gentle"
                 style={{ animationDelay: "0ms" }}
               />
               <div
-                className="w-1 h-4 bg-purple-500 rounded-full animate-pulse"
-                style={{ animationDelay: "150ms" }}
+                className="w-1 h-4 bg-primary rounded-full animate-bounce-gentle"
+                style={{ animationDelay: "200ms" }}
               />
               <div
-                className="w-1 h-3 bg-purple-500 rounded-full animate-pulse"
-                style={{ animationDelay: "300ms" }}
+                className="w-1 h-3 bg-primary rounded-full animate-bounce-gentle"
+                style={{ animationDelay: "400ms" }}
               />
               <div
-                className="w-1 h-5 bg-purple-500 rounded-full animate-pulse"
-                style={{ animationDelay: "450ms" }}
+                className="w-1 h-5 bg-primary rounded-full animate-bounce-gentle"
+                style={{ animationDelay: "600ms" }}
               />
             </div>
           )}
@@ -297,19 +297,19 @@ export function VoiceAssistant({
       </div>
 
       {!isAvailable && (
-        <div className="mt-3 pt-3 border-t border-border/50">
-          <div className="text-xs text-red-500 flex items-center space-x-1">
-            <AlertCircle className="w-3 h-3" />
+        <div className="mt-4 pt-4 border-t border-border/30">
+          <div className="text-xs text-destructive flex items-center space-x-2 font-medium">
+            <AlertCircle className="w-3.5 h-3.5" />
             <span>Voice recognition not supported</span>
           </div>
         </div>
       )}
 
       {state === "idle" && isAvailable && (
-        <div className="mt-3 pt-3 border-t border-border/50">
-          <div className="text-xs text-muted-foreground">
-            Try: "Add task", "Remind me to...", "Schedule meeting", "Mark
-            complete"
+        <div className="mt-4 pt-4 border-t border-border/30">
+          <div className="text-xs text-muted-foreground leading-relaxed">
+            <div className="font-medium text-foreground mb-1">Try saying:</div>
+            "Add task", "Remind me to...", "Schedule meeting", "Mark complete"
           </div>
         </div>
       )}
