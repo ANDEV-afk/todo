@@ -258,7 +258,9 @@ export function VoiceAssistant({
 
   const handleDisambiguation = async (task: Task, index: number) => {
     try {
-      const response = await SmartTaskAssistant.processCommand((index + 1).toString());
+      const response = await SmartTaskAssistant.processCommand(
+        (index + 1).toString(),
+      );
       if (response.success) {
         setFeedback(response.message);
         setState("success");
@@ -303,87 +305,123 @@ export function VoiceAssistant({
     <>
       {/* Main Voice Assistant */}
       <div
-      className={cn(
-        "fixed bottom-6 right-6 z-50",
-        "glass-thick rounded-2xl p-5 min-w-[220px] max-w-[380px]",
-        "animate-float-gentle apple-card",
-        "transition-all duration-500 ease-out",
-        (state === "listening" || state === "processing") && "scale-105",
-        className,
-      )}
-    >
-      <div className="flex items-start space-x-3">
-        <button
-          onClick={toggleListening}
-          disabled={!isAvailable || state === "processing"}
-          className={cn(
-            "relative w-14 h-14 rounded-full transition-all duration-300",
-            "flex items-center justify-center flex-shrink-0 fab",
-            "haptic-medium shadow-glass",
-            getButtonStyle(),
-            (!isAvailable || state === "processing") &&
-              "opacity-50 cursor-not-allowed",
-          )}
-        >
-          {getButtonContent()}
-        </button>
+        className={cn(
+          "fixed bottom-6 right-6 z-50",
+          "glass-thick rounded-2xl p-5 min-w-[220px] max-w-[380px]",
+          "animate-float-gentle apple-card",
+          "transition-all duration-500 ease-out",
+          (state === "listening" || state === "processing") && "scale-105",
+          className,
+        )}
+      >
+        <div className="flex items-start space-x-3">
+          <button
+            onClick={toggleListening}
+            disabled={!isAvailable || state === "processing"}
+            className={cn(
+              "relative w-14 h-14 rounded-full transition-all duration-300",
+              "flex items-center justify-center flex-shrink-0 fab",
+              "haptic-medium shadow-glass",
+              getButtonStyle(),
+              (!isAvailable || state === "processing") &&
+                "opacity-50 cursor-not-allowed",
+            )}
+          >
+            {getButtonContent()}
+          </button>
 
-        <div className="flex-1 min-w-0 ml-1">
-          <div className="flex items-center space-x-2 mb-2">
-            <span className="text-xl">{getStatusIcon()}</span>
-            <span className="text-sm font-semibold text-foreground truncate font-display">
-              Voice Assistant
-            </span>
-          </div>
-
-          <div className="text-sm text-muted-foreground leading-relaxed font-medium">
-            {getStatusText()}
-          </div>
-
-          {state === "listening" && (
-            <div className="flex space-x-1.5 mt-3">
-              <div
-                className="w-1 h-3 bg-primary rounded-full animate-bounce-gentle"
-                style={{ animationDelay: "0ms" }}
-              />
-              <div
-                className="w-1 h-4 bg-primary rounded-full animate-bounce-gentle"
-                style={{ animationDelay: "200ms" }}
-              />
-              <div
-                className="w-1 h-3 bg-primary rounded-full animate-bounce-gentle"
-                style={{ animationDelay: "400ms" }}
-              />
-              <div
-                className="w-1 h-5 bg-primary rounded-full animate-bounce-gentle"
-                style={{ animationDelay: "600ms" }}
-              />
+          <div className="flex-1 min-w-0 ml-1">
+            <div className="flex items-center space-x-2 mb-2">
+              <span className="text-xl">{getStatusIcon()}</span>
+              <span className="text-sm font-semibold text-foreground truncate font-display">
+                Voice Assistant
+              </span>
             </div>
-          )}
+
+            <div className="text-sm text-muted-foreground leading-relaxed font-medium">
+              {getStatusText()}
+            </div>
+
+            {state === "listening" && (
+              <div className="flex space-x-1.5 mt-3">
+                <div
+                  className="w-1 h-3 bg-primary rounded-full animate-bounce-gentle"
+                  style={{ animationDelay: "0ms" }}
+                />
+                <div
+                  className="w-1 h-4 bg-primary rounded-full animate-bounce-gentle"
+                  style={{ animationDelay: "200ms" }}
+                />
+                <div
+                  className="w-1 h-3 bg-primary rounded-full animate-bounce-gentle"
+                  style={{ animationDelay: "400ms" }}
+                />
+                <div
+                  className="w-1 h-5 bg-primary rounded-full animate-bounce-gentle"
+                  style={{ animationDelay: "600ms" }}
+                />
+              </div>
+            )}
+          </div>
         </div>
+
+        {!isAvailable && (
+          <div className="mt-4 pt-4 border-t border-border/30">
+            <div className="text-xs text-destructive flex items-center space-x-2 font-medium">
+              <AlertCircle className="w-3.5 h-3.5" />
+              <span>Voice recognition not supported</span>
+            </div>
+          </div>
+        )}
+
+        {state === "idle" && isAvailable && (
+          <div className="mt-4 pt-4 border-t border-border/30">
+            <div className="text-xs text-muted-foreground leading-relaxed">
+              <div className="font-medium text-foreground mb-1">
+                Try saying:
+              </div>
+              <div className="space-y-1">
+                <div>"Mark task number 2"</div>
+                <div>"Delete Buy groceries"</div>
+                <div>"Add task review report"</div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
-      {!isAvailable && (
-        <div className="mt-4 pt-4 border-t border-border/30">
-          <div className="text-xs text-destructive flex items-center space-x-2 font-medium">
-            <AlertCircle className="w-3.5 h-3.5" />
-            <span>Voice recognition not supported</span>
-          </div>
-        </div>
+      {/* Confirmation Dialog */}
+      {confirmationData && (
+        <ConfirmationDialog
+          isOpen={showConfirmation}
+          onClose={() => {
+            setShowConfirmation(false);
+            setConfirmationData(null);
+          }}
+          onConfirm={handleConfirmation}
+          task={confirmationData.task}
+          action={confirmationData.action}
+          message={confirmationData.message}
+          newContent={confirmationData.newContent}
+          onVoiceResponse={handleVoiceResponse}
+        />
       )}
 
-      {state === "idle" && isAvailable && (
-        <div className="mt-4 pt-4 border-t border-border/30">
-          <div className="text-xs text-muted-foreground leading-relaxed">
-            <div className="font-medium text-foreground mb-1">Try saying:</div>
-            <div className="space-y-1">
-              <div>"Mark task number 2"</div>
-              <div>"Delete Buy groceries"</div>
-              <div>"Add task review report"</div>
-            </div>
-          </div>
-        </div>
+      {/* Disambiguation Dialog */}
+      {disambiguationData && (
+        <DisambiguationDialog
+          isOpen={showDisambiguation}
+          onClose={() => {
+            setShowDisambiguation(false);
+            setDisambiguationData(null);
+          }}
+          onSelect={handleDisambiguation}
+          tasks={disambiguationData.tasks}
+          query={disambiguationData.query}
+          action={disambiguationData.action}
+          message={disambiguationData.message}
+        />
       )}
-    </div>
+    </>
   );
 }
