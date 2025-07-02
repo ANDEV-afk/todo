@@ -78,6 +78,13 @@ export function TaskCard({
         )}
       />
 
+      {/* Task number indicator */}
+      {taskNumber && (
+        <div className="absolute top-3 right-3 w-6 h-6 rounded-full bg-muted/80 text-muted-foreground text-xs font-bold flex items-center justify-center border border-border/50">
+          {taskNumber}
+        </div>
+      )}
+
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center space-x-2">
           <button
