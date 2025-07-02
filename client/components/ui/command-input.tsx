@@ -8,7 +8,7 @@ import {
   Mic,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { GeminiService } from "@/lib/gemini-service";
+import { VoiceCommandProcessor } from "@/lib/voice-command-processor";
 import { StorageService } from "@/lib/storage-service";
 
 interface CommandInputProps {
