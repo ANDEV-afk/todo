@@ -381,9 +381,10 @@ export function VoiceAssistant({
                 Try saying:
               </div>
               <div className="space-y-1">
-                <div>"Mark task number 2"</div>
-                <div>"Delete Buy groceries"</div>
-                <div>"Add task review report"</div>
+                <div>"Add task: Buy groceries and call mom"</div>
+                <div>"Mark Buy groceries as done"</div>
+                <div>"Delete the Call dentist task"</div>
+                <div>"Change Buy groceries to Buy organic groceries"</div>
               </div>
             </div>
           </div>
