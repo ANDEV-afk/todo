@@ -101,7 +101,9 @@ export function HybridVoiceAssistant({
     setTranscript("");
 
     try {
+      console.log("Processing voice command:", finalTranscript);
       const result = HybridTaskProcessor.processCommand(finalTranscript);
+      console.log("Command result:", result);
       handleResult(result);
     } catch (error) {
       console.error("Error processing voice command:", error);
