@@ -20,47 +20,7 @@ export default function Index() {
 
   const loadTasks = () => {
     const storedTasks = StorageService.getTasks();
-
-    // If no tasks exist, add some sample data
-    if (storedTasks.length === 0) {
-      const sampleTasks = [
-        {
-          title: "Try smart voice commands! 🎤",
-          description:
-            "Say: 'Add task: Submit assignment before 5 PM tomorrow' or 'Mark Buy groceries as done'",
-          priority: "high" as const,
-          status: "pending" as const,
-          tags: ["demo", "voice"],
-        },
-        {
-          title: "Buy groceries",
-          description: "Get milk, bread, eggs, and fresh vegetables",
-          priority: "medium" as const,
-          status: "pending" as const,
-          dueDate: new Date(Date.now() + 24 * 60 * 60 * 1000), // Tomorrow
-          tags: ["shopping", "personal"],
-        },
-        {
-          title: "Call dentist",
-          description: "Schedule routine checkup appointment",
-          priority: "low" as const,
-          status: "pending" as const,
-          tags: ["health", "call"],
-        },
-        {
-          title: "Review quarterly report",
-          description: "Go through Q3 financial data and prepare summary",
-          priority: "high" as const,
-          status: "pending" as const,
-          dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), // 2 days from now
-          tags: ["work", "important"],
-        },
-      ];
-
-      sampleTasks.forEach((task) => StorageService.addTask(task));
-    }
-
-    setTasks(StorageService.getTasks());
+    setTasks(storedTasks);
   };
 
   const handleStatusChange = (taskId: string, status: TaskStatus) => {
