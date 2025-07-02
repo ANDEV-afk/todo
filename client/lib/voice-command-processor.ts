@@ -273,9 +273,11 @@ export class VoiceCommandProcessor {
         "completed",
       );
       if (success) {
+        const taskNumber = this.getTaskNumber(taskToMark.id);
+        const numberText = taskNumber ? ` (task #${taskNumber})` : "";
         return {
           success: true,
-          message: `Great! I marked "${taskToMark.title}" as complete.`,
+          message: `Great! I marked "${taskToMark.title}"${numberText} as complete.`,
           action: "mark",
           taskAffected: taskToMark,
         };
