@@ -8,7 +8,7 @@ import {
   Mic,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { SmartTaskAssistant } from "@/lib/smart-assistant";
+import { ExactVoiceProcessor } from "@/lib/exact-voice-processor";
 import { StorageService } from "@/lib/storage-service";
 
 interface CommandInputProps {
@@ -22,22 +22,22 @@ const quickActions = [
   {
     icon: CheckSquare,
     label: "Add Task",
-    command: "Add task: Buy groceries and call mom",
+    command: "Add task buy groceries and call mom",
   },
   {
     icon: Calendar,
-    label: "Schedule",
-    command: "Create a task: Submit assignment before 5 PM tomorrow",
+    label: "Add Scheduled",
+    command: "Add task submit assignment before 5 PM tomorrow",
   },
   {
     icon: FileText,
     label: "Complete",
-    command: "Mark the task 'Buy groceries' as done",
+    command: "Complete task buy groceries",
   },
   {
     icon: Sparkles,
-    label: "Modify",
-    command: "Change task 'Buy groceries' to 'Buy groceries and fruits'",
+    label: "Delete",
+    command: "Delete task buy groceries",
   },
 ];
 
@@ -55,14 +55,13 @@ export function CommandInput({
     setIsProcessing(true);
 
     try {
-      const result = await SmartTaskAssistant.processCommand(commandText);
+      const result = ExactVoiceProcessor.processVoiceCommand(commandText);
 
       if (result.success) {
         onTaskUpdate?.();
         console.log("Command executed successfully:", result.message);
       } else {
-        // For non-successful results, we'd need to handle dialogs here too
-        // For now, just log the conversational message
+        // For non-successful results, the ExactTaskAssistant handles confirmations
         console.log("Assistant response:", result.message);
       }
     } catch (error) {
