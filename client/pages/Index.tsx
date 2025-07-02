@@ -1,40 +1,44 @@
 import { useState, useEffect } from "react";
 import { Plus, Calendar } from "lucide-react";
 import { TaskCard, Task, TaskStatus } from "@/components/ui/task-card";
+import { EditableTaskCard } from "@/components/ui/editable-task-card";
 import { HybridVoiceAssistant } from "@/components/ui/hybrid-voice-assistant";
 import { CommandInput } from "@/components/ui/command-input";
 import { AppleNavbar } from "@/components/ui/apple-navbar";
 import { StorageService } from "@/lib/storage-service";
 import { HybridTaskProcessor } from "@/lib/hybrid-task-processor";
+import { useEditableTasks } from "@/hooks/use-editable-tasks";
 import { cn } from "@/lib/utils";
 
 export default function Index() {
-  const [tasks, setTasks] = useState<Task[]>([]);
   const [filter, setFilter] = useState<"all" | TaskStatus>("all");
   const [view, setView] = useState<"grid" | "list">("grid");
+
+  const {
+    editableTasks,
+    loadTasks,
+    createNewTask,
+    saveTask,
+    deleteTask,
+    markTaskDone,
+    cancelTask,
+    getTaskNumber,
+    getTaskStats,
+  } = useEditableTasks();
 
   // Load tasks from storage on component mount
   useEffect(() => {
     loadTasks();
-  }, []);
-
-  const loadTasks = () => {
-    const storedTasks = StorageService.getTasks();
-    setTasks(storedTasks);
-  };
+  }, [loadTasks]);
 
   const handleStatusChange = (taskId: string, status: TaskStatus) => {
-    const success = StorageService.updateTaskStatus(taskId, status);
-    if (success) {
-      loadTasks(); // Reload from storage to stay in sync
+    if (status === "completed") {
+      markTaskDone(taskId);
     }
   };
 
   const handleDeleteTask = (taskId: string) => {
-    const success = StorageService.deleteTask(taskId);
-    if (success) {
-      loadTasks(); // Reload from storage to stay in sync
-    }
+    deleteTask(taskId);
   };
 
   const handleTaskUpdate = () => {
@@ -44,22 +48,19 @@ export default function Index() {
 
   const handleAddTask = () => {
     // Quick add task without voice
-    const newTask: Omit<Task, "id"> = {
-      title: "New task",
-      priority: "medium",
-      status: "pending",
-      tags: ["manual"],
-    };
-    StorageService.addTask(newTask);
-    loadTasks();
+    createNewTask("New task");
   };
 
   const handleCommand = async (command: string) => {
     try {
       const result = HybridTaskProcessor.processCommand(command);
 
-      if (result.success) {
-        loadTasks(); // Refresh the task list
+      if (result.success && result.createEditableTask && result.taskContent) {
+        // Create immediate editable task card
+        createNewTask(result.taskContent);
+        console.log("Created editable task:", result.message);
+      } else if (result.success) {
+        loadTasks(); // Refresh for other operations
         console.log("Command executed:", result.message);
       } else {
         // The HybridVoiceAssistant component will handle confirmations
@@ -70,14 +71,15 @@ export default function Index() {
     }
   };
 
-  const filteredTasks = tasks.filter((task) =>
-    filter === "all" ? true : task.status === filter,
-  );
+  const stats = getTaskStats();
+  const filteredTasks = editableTasks.filter((task) => {
+    if (filter === "all") return true;
+    return task.status === filter;
+  });
 
-  const completedCount = tasks.filter(
-    (task) => task.status === "completed",
-  ).length;
-  const totalCount = tasks.length;
+  const completedCount = stats.completed;
+  const totalCount = stats.total;
+  const pendingCount = stats.pending;
 
   return (
     <div className="min-h-screen relative">
@@ -87,7 +89,7 @@ export default function Index() {
       {/* Apple-style Navbar */}
       <AppleNavbar
         title="Good morning! 👋"
-        subtitle={`You have ${tasks.length - completedCount} tasks pending`}
+        subtitle={`You have ${pendingCount} tasks pending`}
       />
 
       {/* Main Content */}
@@ -212,9 +214,24 @@ export default function Index() {
           </div>
           {/* Task Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredTasks.map((task, index) => {
-              // Calculate task number based on original position in all tasks
-              const taskNumber = tasks.findIndex((t) => t.id === task.id) + 1;
+            {filteredTasks.map((task) => {
+              const taskNumber = getTaskNumber(task.id);
+
+              // Show editable cards for new/editing tasks, regular cards for others
+              if (task.isNew || task.isEditing) {
+                return (
+                  <EditableTaskCard
+                    key={task.id}
+                    task={task}
+                    taskNumber={taskNumber}
+                    onSave={saveTask}
+                    onDelete={deleteTask}
+                    onMarkDone={markTaskDone}
+                    onCancel={cancelTask}
+                  />
+                );
+              }
+
               return (
                 <TaskCard
                   key={task.id}

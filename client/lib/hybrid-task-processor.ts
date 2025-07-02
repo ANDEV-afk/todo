@@ -8,6 +8,8 @@ export interface HybridTaskResult {
   requiresConfirmation?: boolean;
   taskAffected?: Task;
   exactText?: string;
+  createEditableTask?: boolean;
+  taskContent?: string;
 }
 
 /**
@@ -141,28 +143,21 @@ export class HybridTaskProcessor {
   }
 
   /**
-   * Execute add task with exact content preservation
+   * Execute add task with exact content preservation - triggers immediate editable card
    */
   private static executeAddTask(
     exactContent: string,
     originalCommand: string,
   ): HybridTaskResult {
     try {
-      const newTask: Omit<Task, "id"> = {
-        title: exactContent, // Preserve exact content
-        priority: "medium",
-        status: "pending",
-        tags: ["voice"],
-      };
-
-      const addedTask = StorageService.addTask(newTask);
-
+      // Return immediately to trigger editable card creation
       return {
         success: true,
-        message: `Added task: "${exactContent}"`,
+        message: `Creating task: "${exactContent}"`,
         action: "add",
-        taskAffected: addedTask,
         exactText: exactContent,
+        createEditableTask: true,
+        taskContent: exactContent,
       };
     } catch (error) {
       return {
