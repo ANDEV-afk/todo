@@ -58,10 +58,9 @@ export function TaskCard({
   return (
     <div
       className={cn(
-        "group relative p-4 rounded-xl transition-all duration-300",
-        "glass hover:glass-strong",
-        "hover:scale-[1.02] hover:-translate-y-1",
-        "cursor-pointer",
+        "group relative p-6 rounded-2xl apple-card haptic-light",
+        "glass-thin hover:glass-regular transition-all duration-500 ease-out",
+        "cursor-pointer border border-border/50",
         task.status === "completed" && "opacity-60",
         className,
       )}
@@ -71,8 +70,9 @@ export function TaskCard({
       {/* Priority indicator */}
       <div
         className={cn(
-          "absolute top-0 left-4 w-12 h-1 rounded-b-full",
+          "absolute top-0 left-6 w-16 h-1.5 rounded-b-lg",
           priority.class,
+          "shadow-sm",
         )}
       />
 
@@ -81,43 +81,53 @@ export function TaskCard({
           <button
             onClick={handleStatusToggle}
             className={cn(
-              "w-5 h-5 rounded-full border-2 transition-all duration-200",
-              "flex items-center justify-center",
+              "w-6 h-6 rounded-full border-2 transition-all duration-300 ease-out",
+              "flex items-center justify-center apple-button haptic-light",
+              "shadow-sm hover:shadow-md",
               task.status === "completed"
-                ? "bg-green-500 border-green-500"
-                : "border-gray-300 hover:border-green-400",
+                ? "bg-success border-success scale-110"
+                : "border-border hover:border-success/50 hover:bg-success/10",
             )}
           >
             {task.status === "completed" && (
-              <Check className="w-3 h-3 text-white" />
+              <Check className="w-3.5 h-3.5 text-white" />
             )}
           </button>
 
           <div
             className={cn(
-              "flex items-center space-x-2 px-2 py-1 rounded-full text-xs font-medium",
+              "flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs font-semibold",
+              "border shadow-sm transition-all duration-200",
               priority.class,
             )}
           >
-            <span>{priority.icon}</span>
-            <span>{priority.label}</span>
+            <span className="text-sm">{priority.icon}</span>
+            <span className="font-display">{priority.label}</span>
           </div>
         </div>
 
         <div className="flex items-center space-x-1">
           {isHovered && (
-            <div className="flex items-center space-x-1 animate-slide-up">
+            <div className="flex items-center space-x-2 animate-spring-in">
               <button
                 onClick={() => onEdit?.(task.id)}
-                className="w-6 h-6 rounded-full bg-blue-500/20 hover:bg-blue-500/30 flex items-center justify-center transition-colors"
+                className={cn(
+                  "w-8 h-8 rounded-full glass-thin flex items-center justify-center",
+                  "apple-button haptic-light transition-all duration-200",
+                  "hover:bg-info/20 hover:border-info/30",
+                )}
               >
-                <Mic className="w-3 h-3 text-blue-600" />
+                <Mic className="w-3.5 h-3.5 text-info" />
               </button>
               <button
                 onClick={() => onDelete?.(task.id)}
-                className="w-6 h-6 rounded-full bg-red-500/20 hover:bg-red-500/30 flex items-center justify-center transition-colors"
+                className={cn(
+                  "w-8 h-8 rounded-full glass-thin flex items-center justify-center",
+                  "apple-button haptic-light transition-all duration-200",
+                  "hover:bg-destructive/20 hover:border-destructive/30",
+                )}
               >
-                <X className="w-3 h-3 text-red-600" />
+                <X className="w-3.5 h-3.5 text-destructive" />
               </button>
             </div>
           )}
@@ -125,33 +135,39 @@ export function TaskCard({
         </div>
       </div>
 
-      <div className="mb-3">
+      <div className="mb-4">
         <h3
           className={cn(
-            "font-semibold text-foreground mb-1",
-            task.status === "completed" && "line-through",
+            "font-semibold text-foreground mb-2 font-display text-lg leading-tight",
+            task.status === "completed" && "line-through opacity-60",
           )}
         >
           {task.title}
         </h3>
         {task.description && (
-          <p className="text-sm text-muted-foreground">{task.description}</p>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            {task.description}
+          </p>
         )}
       </div>
 
       {task.dueDate && (
-        <div className="flex items-center space-x-1 text-xs text-muted-foreground mb-2">
-          <Clock className="w-3 h-3" />
-          <span>{formatDate(task.dueDate)}</span>
+        <div className="flex items-center space-x-2 text-xs text-muted-foreground mb-3">
+          <Clock className="w-3.5 h-3.5" />
+          <span className="font-medium">{formatDate(task.dueDate)}</span>
         </div>
       )}
 
       {task.tags && task.tags.length > 0 && (
-        <div className="flex flex-wrap gap-1">
+        <div className="flex flex-wrap gap-2">
           {task.tags.map((tag, index) => (
             <span
               key={index}
-              className="px-2 py-1 text-xs rounded-full bg-secondary/50 text-secondary-foreground"
+              className={cn(
+                "px-2.5 py-1 text-xs rounded-full font-medium",
+                "bg-muted/80 text-muted-foreground border border-border/50",
+                "transition-all duration-200 hover:bg-muted",
+              )}
             >
               {tag}
             </span>
@@ -160,7 +176,7 @@ export function TaskCard({
       )}
 
       {/* Drag handle */}
-      <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-primary/20 rounded-r-full opacity-0 group-hover:opacity-100 transition-opacity" />
+      <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-12 bg-gradient-to-b from-primary/40 to-accent/40 rounded-r-lg opacity-0 group-hover:opacity-100 transition-all duration-300" />
     </div>
   );
 }
