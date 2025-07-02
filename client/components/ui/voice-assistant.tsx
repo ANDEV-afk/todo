@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { voiceService } from "@/lib/voice-service";
-import { GeminiService } from "@/lib/gemini-service";
+import { VoiceCommandProcessor } from "@/lib/voice-command-processor";
 import { StorageService } from "@/lib/storage-service";
 import { Task } from "./task-card";
 
