@@ -225,8 +225,84 @@ export function VoiceAssistant({
     return "🎙️";
   };
 
+  // Dialog handlers
+  const handleConfirmation = async (confirmed: boolean) => {
+    if (confirmed && confirmationData) {
+      try {
+        const response = await SmartTaskAssistant.processCommand("yes");
+        if (response.success) {
+          setFeedback(response.message);
+          setState("success");
+          onTaskUpdate?.();
+        } else {
+          setError(response.message);
+          setState("error");
+        }
+      } catch (error) {
+        setError("Failed to process confirmation");
+        setState("error");
+      }
+    } else {
+      try {
+        await SmartTaskAssistant.processCommand("no");
+        setFeedback("Action cancelled");
+        setState("idle");
+      } catch (error) {
+        // Silent fail for cancellation
+      }
+    }
+
+    setShowConfirmation(false);
+    setConfirmationData(null);
+  };
+
+  const handleDisambiguation = async (task: Task, index: number) => {
+    try {
+      const response = await SmartTaskAssistant.processCommand((index + 1).toString());
+      if (response.success) {
+        setFeedback(response.message);
+        setState("success");
+        onTaskUpdate?.();
+      } else if (response.requiresConfirmation) {
+        setConfirmationData({
+          task: response.taskAffected!,
+          action: response.action as "delete" | "modify",
+          message: response.message,
+        });
+        setShowConfirmation(true);
+      } else {
+        setError(response.message);
+        setState("error");
+      }
+    } catch (error) {
+      setError("Failed to process selection");
+      setState("error");
+    }
+
+    setShowDisambiguation(false);
+    setDisambiguationData(null);
+  };
+
+  const handleVoiceResponse = async (response: string) => {
+    // Handle voice responses for confirmation dialogs
+    try {
+      const result = await SmartTaskAssistant.processCommand(response);
+      if (result.success) {
+        setFeedback(result.message);
+        setState("success");
+        onTaskUpdate?.();
+        setShowConfirmation(false);
+        setConfirmationData(null);
+      }
+    } catch (error) {
+      // Continue with dialog
+    }
+  };
+
   return (
-    <div
+    <>
+      {/* Main Voice Assistant */}
+      <div
       className={cn(
         "fixed bottom-6 right-6 z-50",
         "glass-thick rounded-2xl p-5 min-w-[220px] max-w-[380px]",
