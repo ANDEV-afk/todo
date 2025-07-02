@@ -113,20 +113,21 @@ export function CommandInput({
     <div
       className={cn(
         "fixed top-6 left-1/2 -translate-x-1/2 z-40",
-        "w-full max-w-2xl px-4",
+        "w-full max-w-3xl px-6",
         className,
       )}
     >
       <div
         className={cn(
-          "glass-strong rounded-2xl p-1",
-          "transition-all duration-300",
-          isFocused && "scale-105 shadow-2xl",
+          "glass-thick rounded-3xl p-2 border border-border/30",
+          "transition-all duration-500 ease-out apple-card",
+          "shadow-glass hover:shadow-glass-lg",
+          isFocused && "scale-105 shadow-2xl ring-2 ring-primary/20",
         )}
       >
         <form onSubmit={handleSubmit} className="relative">
-          <div className="flex items-center space-x-3 p-3">
-            <Search className="w-5 h-5 text-primary" />
+          <div className="flex items-center space-x-4 p-4">
+            <Search className="w-5 h-5 text-primary flex-shrink-0" />
             <input
               type="text"
               value={input}
@@ -135,13 +136,17 @@ export function CommandInput({
               onBlur={() => setIsFocused(false)}
               placeholder={isProcessing ? "Processing..." : placeholder}
               disabled={isProcessing}
-              className="flex-1 bg-transparent border-0 outline-none text-foreground placeholder-muted-foreground text-lg disabled:opacity-50"
-            />
-            <div className="flex items-center space-x-2">
-              {isProcessing && (
-                <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+              className={cn(
+                "flex-1 bg-transparent border-0 outline-none text-foreground",
+                "placeholder-muted-foreground text-lg font-medium disabled:opacity-50",
+                "font-display",
               )}
-              <span className="text-xs text-muted-foreground px-2 py-1 rounded-md bg-muted/50">
+            />
+            <div className="flex items-center space-x-3 flex-shrink-0">
+              {isProcessing && (
+                <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+              )}
+              <span className="text-xs text-muted-foreground px-3 py-1.5 rounded-lg bg-muted/60 font-medium">
                 ⌘K
               </span>
             </div>
@@ -149,7 +154,7 @@ export function CommandInput({
         </form>
 
         {isFocused && (
-          <div className="border-t border-border/50 p-2 animate-slide-up">
+          <div className="border-t border-border/30 p-3 animate-spring-in">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
               {quickActions.map((action, index) => {
                 const Icon = action.icon;
@@ -157,10 +162,14 @@ export function CommandInput({
                   <button
                     key={index}
                     onClick={() => handleQuickAction(action.command)}
-                    className="flex items-center space-x-2 p-2 rounded-lg hover:bg-secondary/50 transition-colors text-left"
+                    className={cn(
+                      "flex items-center space-x-2 p-3 rounded-xl transition-all duration-200",
+                      "glass-ultra-thin hover:glass-thin apple-button haptic-light",
+                      "text-left border border-border/20 hover:border-border/40",
+                    )}
                   >
                     <Icon className="w-4 h-4 text-primary" />
-                    <span className="text-sm text-foreground">
+                    <span className="text-sm text-foreground font-medium font-display">
                       {action.label}
                     </span>
                   </button>
