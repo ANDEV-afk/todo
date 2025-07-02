@@ -341,11 +341,13 @@ export class VoiceCommandProcessor {
     }
 
     if (taskToDelete) {
+      const taskNumber = this.getTaskNumber(taskToDelete.id);
       const success = StorageService.deleteTask(taskToDelete.id);
       if (success) {
+        const numberText = taskNumber ? ` (task #${taskNumber})` : "";
         return {
           success: true,
-          message: `I deleted the task "${taskToDelete.title}".`,
+          message: `I deleted "${taskToDelete.title}"${numberText}.`,
           action: "delete",
           taskAffected: taskToDelete,
         };
