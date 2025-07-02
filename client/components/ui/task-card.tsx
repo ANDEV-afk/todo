@@ -33,6 +33,7 @@ const priorityConfig = {
 
 export function TaskCard({
   task,
+  taskNumber,
   onStatusChange,
   onDelete,
   onEdit,
