@@ -244,15 +244,20 @@ export default function Index() {
           </div>
           {/* Task Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredTasks.map((task) => (
-              <TaskCard
-                key={task.id}
-                task={task}
-                onStatusChange={handleStatusChange}
-                onDelete={handleDeleteTask}
-                onEdit={(id) => console.log("Edit task:", id)}
-              />
-            ))}
+            {filteredTasks.map((task, index) => {
+              // Calculate task number based on original position in all tasks
+              const taskNumber = tasks.findIndex((t) => t.id === task.id) + 1;
+              return (
+                <TaskCard
+                  key={task.id}
+                  task={task}
+                  taskNumber={taskNumber}
+                  onStatusChange={handleStatusChange}
+                  onDelete={handleDeleteTask}
+                  onEdit={(id) => console.log("Edit task:", id)}
+                />
+              );
+            })}
           </div>
 
           {filteredTasks.length === 0 && (
