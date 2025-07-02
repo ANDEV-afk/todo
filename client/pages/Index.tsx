@@ -136,7 +136,11 @@ export default function Index() {
                     In Progress
                   </p>
                   <p className="text-3xl font-bold text-foreground font-display">
-                    {tasks.filter((t) => t.status === "in-progress").length}
+                    {
+                      editableTasks.filter(
+                        (t) => !t.isNew && t.status === "in-progress",
+                      ).length
+                    }
                   </p>
                 </div>
                 <div className="w-14 h-14 rounded-2xl bg-warning/20 flex items-center justify-center shadow-sm">
