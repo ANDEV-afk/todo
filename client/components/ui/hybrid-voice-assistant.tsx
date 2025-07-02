@@ -19,6 +19,7 @@ import { Button } from "./button";
 
 interface HybridVoiceAssistantProps {
   onTaskUpdate?: () => void;
+  onTaskCreate?: (taskContent: string) => void;
   className?: string;
 }
 
@@ -32,6 +33,7 @@ type AssistantState =
 
 export function HybridVoiceAssistant({
   onTaskUpdate,
+  onTaskCreate,
   className,
 }: HybridVoiceAssistantProps) {
   const [state, setState] = useState<AssistantState>("idle");
@@ -66,7 +68,13 @@ export function HybridVoiceAssistant({
   }, [message, state]);
 
   const handleResult = (result: HybridTaskResult) => {
-    if (result.success) {
+    if (result.success && result.createEditableTask && result.taskContent) {
+      // Create editable task immediately
+      setMessage(result.message);
+      setState("success");
+      onTaskCreate?.(result.taskContent);
+      setPendingConfirmation(null);
+    } else if (result.success) {
       setMessage(result.message);
       setState("success");
       onTaskUpdate?.();

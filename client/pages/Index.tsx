@@ -270,7 +270,10 @@ export default function Index() {
       </main>
 
       {/* Hybrid Voice Assistant */}
-      <HybridVoiceAssistant onTaskUpdate={handleTaskUpdate} />
+      <HybridVoiceAssistant
+        onTaskUpdate={handleTaskUpdate}
+        onTaskCreate={createNewTask}
+      />
 
       {/* Background Decoration */}
       <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
