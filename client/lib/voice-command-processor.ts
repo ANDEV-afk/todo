@@ -128,6 +128,15 @@ export class VoiceCommandProcessor {
   }
 
   /**
+   * Get task number (1-based index) for a given task
+   */
+  static getTaskNumber(taskId: string): number | null {
+    const tasks = StorageService.getTasks();
+    const index = tasks.findIndex((task) => task.id === taskId);
+    return index >= 0 ? index + 1 : null;
+  }
+
+  /**
    * Find task by name (case-insensitive partial match)
    */
   static findTaskByName(taskName: string): Task | null {
