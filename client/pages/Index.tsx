@@ -25,12 +25,27 @@ export default function Index() {
     if (storedTasks.length === 0) {
       const sampleTasks = [
         {
-          title: "Try voice commands! 🎤",
+          title: "Try smart voice commands! 🎤",
           description:
-            "Click the voice assistant and say 'Add task review the project'",
+            "Say: 'Add task: Submit assignment before 5 PM tomorrow' or 'Mark Buy groceries as done'",
           priority: "high" as const,
           status: "pending" as const,
           tags: ["demo", "voice"],
+        },
+        {
+          title: "Buy groceries",
+          description: "Get milk, bread, eggs, and fresh vegetables",
+          priority: "medium" as const,
+          status: "pending" as const,
+          dueDate: new Date(Date.now() + 24 * 60 * 60 * 1000), // Tomorrow
+          tags: ["shopping", "personal"],
+        },
+        {
+          title: "Call dentist",
+          description: "Schedule routine checkup appointment",
+          priority: "low" as const,
+          status: "pending" as const,
+          tags: ["health", "call"],
         },
         {
           title: "Review quarterly report",
@@ -38,15 +53,7 @@ export default function Index() {
           priority: "high" as const,
           status: "pending" as const,
           dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), // 2 days from now
-          tags: ["finance", "urgent"],
-        },
-        {
-          title: "Team standup meeting",
-          description: "Daily sync with the development team",
-          priority: "medium" as const,
-          status: "pending" as const,
-          dueDate: new Date(Date.now() + 24 * 60 * 60 * 1000), // Tomorrow
-          tags: ["meeting", "team"],
+          tags: ["work", "important"],
         },
       ];
 
