@@ -110,9 +110,12 @@ export function VoiceAssistant({
         }
       },
       onEnd: () => {
-        if (state === "listening") {
-          setState("idle");
-        }
+        // Only set to idle if we're not processing
+        setState((currentState) =>
+          currentState === "listening" || currentState === "processing"
+            ? "idle"
+            : currentState,
+        );
       },
       onError: (errorMessage) => {
         setError(errorMessage);
