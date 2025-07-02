@@ -17,6 +17,7 @@ export interface Task {
 
 interface TaskCardProps {
   task: Task;
+  taskNumber?: number;
   onStatusChange?: (taskId: string, status: TaskStatus) => void;
   onDelete?: (taskId: string) => void;
   onEdit?: (taskId: string) => void;
@@ -32,6 +33,7 @@ const priorityConfig = {
 
 export function TaskCard({
   task,
+  taskNumber,
   onStatusChange,
   onDelete,
   onEdit,
@@ -75,6 +77,13 @@ export function TaskCard({
           "shadow-sm",
         )}
       />
+
+      {/* Task number indicator */}
+      {taskNumber && (
+        <div className="absolute top-3 right-3 w-6 h-6 rounded-full bg-muted/80 text-muted-foreground text-xs font-bold flex items-center justify-center border border-border/50">
+          {taskNumber}
+        </div>
+      )}
 
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center space-x-2">

@@ -5,6 +5,7 @@ import { VoiceAssistant } from "@/components/ui/voice-assistant";
 import { CommandInput } from "@/components/ui/command-input";
 import { AppleNavbar } from "@/components/ui/apple-navbar";
 import { StorageService } from "@/lib/storage-service";
+import { SmartTaskAssistant } from "@/lib/smart-assistant";
 import { cn } from "@/lib/utils";
 
 export default function Index() {
@@ -24,12 +25,27 @@ export default function Index() {
     if (storedTasks.length === 0) {
       const sampleTasks = [
         {
-          title: "Try voice commands! 🎤",
+          title: "Try smart voice commands! 🎤",
           description:
-            "Click the voice assistant and say 'Add task review the project'",
+            "Say: 'Add task: Submit assignment before 5 PM tomorrow' or 'Mark Buy groceries as done'",
           priority: "high" as const,
           status: "pending" as const,
           tags: ["demo", "voice"],
+        },
+        {
+          title: "Buy groceries",
+          description: "Get milk, bread, eggs, and fresh vegetables",
+          priority: "medium" as const,
+          status: "pending" as const,
+          dueDate: new Date(Date.now() + 24 * 60 * 60 * 1000), // Tomorrow
+          tags: ["shopping", "personal"],
+        },
+        {
+          title: "Call dentist",
+          description: "Schedule routine checkup appointment",
+          priority: "low" as const,
+          status: "pending" as const,
+          tags: ["health", "call"],
         },
         {
           title: "Review quarterly report",
@@ -37,15 +53,7 @@ export default function Index() {
           priority: "high" as const,
           status: "pending" as const,
           dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), // 2 days from now
-          tags: ["finance", "urgent"],
-        },
-        {
-          title: "Team standup meeting",
-          description: "Daily sync with the development team",
-          priority: "medium" as const,
-          status: "pending" as const,
-          dueDate: new Date(Date.now() + 24 * 60 * 60 * 1000), // Tomorrow
-          tags: ["meeting", "team"],
+          tags: ["work", "important"],
         },
       ];
 
@@ -86,32 +94,19 @@ export default function Index() {
     loadTasks();
   };
 
-  const handleCommand = (command: string) => {
-    const lowerCommand = command.toLowerCase();
+  const handleCommand = async (command: string) => {
+    try {
+      const result = await SmartTaskAssistant.processCommand(command);
 
-    if (
-      lowerCommand.includes("add task") ||
-      lowerCommand.includes("new task")
-    ) {
-      handleAddTask();
-    } else if (
-      lowerCommand.includes("complete") ||
-      lowerCommand.includes("done")
-    ) {
-      // Mark first pending task as complete
-      const pendingTasks = StorageService.getTasksByStatus("pending");
-      if (pendingTasks.length > 0) {
-        handleStatusChange(pendingTasks[0].id, "completed");
+      if (result.success) {
+        loadTasks(); // Refresh the task list
+        console.log("Command executed:", result.message);
+      } else {
+        // The VoiceAssistant component will handle dialogs
+        console.log("Assistant response:", result.message);
       }
-    } else if (
-      lowerCommand.includes("delete") ||
-      lowerCommand.includes("remove")
-    ) {
-      // Delete most recent task
-      const allTasks = StorageService.getTasks();
-      if (allTasks.length > 0) {
-        handleDeleteTask(allTasks[0].id);
-      }
+    } catch (error) {
+      console.error("Error handling command:", error);
     }
   };
 
@@ -257,15 +252,20 @@ export default function Index() {
           </div>
           {/* Task Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredTasks.map((task) => (
-              <TaskCard
-                key={task.id}
-                task={task}
-                onStatusChange={handleStatusChange}
-                onDelete={handleDeleteTask}
-                onEdit={(id) => console.log("Edit task:", id)}
-              />
-            ))}
+            {filteredTasks.map((task, index) => {
+              // Calculate task number based on original position in all tasks
+              const taskNumber = tasks.findIndex((t) => t.id === task.id) + 1;
+              return (
+                <TaskCard
+                  key={task.id}
+                  task={task}
+                  taskNumber={taskNumber}
+                  onStatusChange={handleStatusChange}
+                  onDelete={handleDeleteTask}
+                  onEdit={(id) => console.log("Edit task:", id)}
+                />
+              );
+            })}
           </div>
 
           {filteredTasks.length === 0 && (

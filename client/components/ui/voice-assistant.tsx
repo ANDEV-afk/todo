@@ -9,7 +9,9 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { voiceService } from "@/lib/voice-service";
-import { GeminiService } from "@/lib/gemini-service";
+import { SmartTaskAssistant } from "@/lib/smart-assistant";
+import { ConfirmationDialog } from "./confirmation-dialog";
+import { DisambiguationDialog } from "./disambiguation-dialog";
 import { StorageService } from "@/lib/storage-service";
 import { Task } from "./task-card";
 
@@ -29,6 +31,22 @@ export function VoiceAssistant({
   const [transcript, setTranscript] = useState("");
   const [feedback, setFeedback] = useState("");
   const [error, setError] = useState("");
+
+  // Dialog states
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [showDisambiguation, setShowDisambiguation] = useState(false);
+  const [confirmationData, setConfirmationData] = useState<{
+    task?: Task;
+    action: "delete" | "modify";
+    message: string;
+    newContent?: string;
+  } | null>(null);
+  const [disambiguationData, setDisambiguationData] = useState<{
+    tasks: Task[];
+    query: string;
+    action: "complete" | "delete" | "modify";
+    message: string;
+  } | null>(null);
 
   useEffect(() => {
     setIsAvailable(voiceService.isSupported());
@@ -56,70 +74,40 @@ export function VoiceAssistant({
     setTranscript("");
 
     try {
-      const command = await GeminiService.parseVoiceCommand(finalTranscript);
+      const result = await SmartTaskAssistant.processCommand(finalTranscript);
 
-      switch (command.type) {
-        case "task":
-        case "reminder":
-        case "meeting":
-        case "note":
-          const newTask: Omit<Task, "id"> = {
-            title: command.title,
-            description: command.description,
-            priority: command.priority || "medium",
-            status: "pending",
-            dueDate:
-              command.date && command.time
-                ? new Date(`${command.date}T${command.time}`)
-                : command.date
-                  ? new Date(command.date)
-                  : undefined,
-            tags: [command.type],
-          };
-
-          StorageService.addTask(newTask);
-          setFeedback(`✅ Added ${command.type}: "${command.title}"`);
-          setState("success");
-          onTaskUpdate?.();
-          break;
-
-        case "complete":
-          // Mark the most recent task as complete if no specific task mentioned
-          const pendingTasks = StorageService.getTasksByStatus("pending");
-          if (pendingTasks.length > 0) {
-            const taskToComplete = pendingTasks[0];
-            StorageService.updateTaskStatus(taskToComplete.id, "completed");
-            setFeedback(`✅ Marked "${taskToComplete.title}" as complete`);
-            setState("success");
-            onTaskUpdate?.();
-          } else {
-            setError("No pending tasks to complete");
-            setState("error");
-          }
-          break;
-
-        case "delete":
-          // Delete the most recent task if no specific task mentioned
-          const allTasks = StorageService.getTasks();
-          if (allTasks.length > 0) {
-            const taskToDelete = allTasks[0];
-            StorageService.deleteTask(taskToDelete.id);
-            setFeedback(`🗑️ Deleted "${taskToDelete.title}"`);
-            setState("success");
-            onTaskUpdate?.();
-          } else {
-            setError("No tasks to delete");
-            setState("error");
-          }
-          break;
-
-        default:
-          setError("Sorry, I didn't understand that command");
-          setState("error");
+      if (result.success) {
+        setFeedback(result.message);
+        setState("success");
+        onTaskUpdate?.();
+      } else if (result.requiresConfirmation && result.taskAffected) {
+        // Show confirmation dialog
+        setConfirmationData({
+          task: result.taskAffected,
+          action: result.action as "delete" | "modify",
+          message: result.message,
+        });
+        setShowConfirmation(true);
+        setFeedback(result.message);
+        setState("idle");
+      } else if (result.requiresDisambiguation && result.candidateTasks) {
+        // Show disambiguation dialog
+        setDisambiguationData({
+          tasks: result.candidateTasks,
+          query: finalTranscript,
+          action: result.action as "complete" | "delete" | "modify",
+          message: result.message,
+        });
+        setShowDisambiguation(true);
+        setFeedback(result.message);
+        setState("idle");
+      } else {
+        setError(result.message);
+        setState("error");
       }
     } catch (error) {
       console.error("Error processing voice command:", error);
-      setError("Failed to process voice command");
+      setError("Sorry, I couldn't process that command. Please try again.");
       setState("error");
     }
   };
@@ -159,9 +147,12 @@ export function VoiceAssistant({
         }
       },
       onEnd: () => {
-        if (state === "listening") {
-          setState("idle");
-        }
+        // Only set to idle if we're not processing
+        setState((currentState) =>
+          currentState === "listening" || currentState === "processing"
+            ? "idle"
+            : currentState,
+        );
       },
       onError: (errorMessage) => {
         setError(errorMessage);
@@ -230,89 +221,208 @@ export function VoiceAssistant({
     if (state === "success") return "✅";
     if (state === "error") return "❌";
     if (state === "processing") return "🧠";
-    if (state === "listening") return "🎤";
+    if (state === "listening") return "���";
     return "🎙️";
   };
 
+  // Dialog handlers
+  const handleConfirmation = async (confirmed: boolean) => {
+    if (confirmed && confirmationData) {
+      try {
+        const response = await SmartTaskAssistant.processCommand("yes");
+        if (response.success) {
+          setFeedback(response.message);
+          setState("success");
+          onTaskUpdate?.();
+        } else {
+          setError(response.message);
+          setState("error");
+        }
+      } catch (error) {
+        setError("Failed to process confirmation");
+        setState("error");
+      }
+    } else {
+      try {
+        await SmartTaskAssistant.processCommand("no");
+        setFeedback("Action cancelled");
+        setState("idle");
+      } catch (error) {
+        // Silent fail for cancellation
+      }
+    }
+
+    setShowConfirmation(false);
+    setConfirmationData(null);
+  };
+
+  const handleDisambiguation = async (task: Task, index: number) => {
+    try {
+      const response = await SmartTaskAssistant.processCommand(
+        (index + 1).toString(),
+      );
+      if (response.success) {
+        setFeedback(response.message);
+        setState("success");
+        onTaskUpdate?.();
+      } else if (response.requiresConfirmation) {
+        setConfirmationData({
+          task: response.taskAffected!,
+          action: response.action as "delete" | "modify",
+          message: response.message,
+        });
+        setShowConfirmation(true);
+      } else {
+        setError(response.message);
+        setState("error");
+      }
+    } catch (error) {
+      setError("Failed to process selection");
+      setState("error");
+    }
+
+    setShowDisambiguation(false);
+    setDisambiguationData(null);
+  };
+
+  const handleVoiceResponse = async (response: string) => {
+    // Handle voice responses for confirmation dialogs
+    try {
+      const result = await SmartTaskAssistant.processCommand(response);
+      if (result.success) {
+        setFeedback(result.message);
+        setState("success");
+        onTaskUpdate?.();
+        setShowConfirmation(false);
+        setConfirmationData(null);
+      }
+    } catch (error) {
+      // Continue with dialog
+    }
+  };
+
   return (
-    <div
-      className={cn(
-        "fixed bottom-6 right-6 z-50",
-        "glass-thick rounded-2xl p-5 min-w-[220px] max-w-[380px]",
-        "animate-float-gentle apple-card",
-        "transition-all duration-500 ease-out",
-        (state === "listening" || state === "processing") && "scale-105",
-        className,
-      )}
-    >
-      <div className="flex items-start space-x-3">
-        <button
-          onClick={toggleListening}
-          disabled={!isAvailable || state === "processing"}
-          className={cn(
-            "relative w-14 h-14 rounded-full transition-all duration-300",
-            "flex items-center justify-center flex-shrink-0 fab",
-            "haptic-medium shadow-glass",
-            getButtonStyle(),
-            (!isAvailable || state === "processing") &&
-              "opacity-50 cursor-not-allowed",
-          )}
-        >
-          {getButtonContent()}
-        </button>
+    <>
+      {/* Main Voice Assistant */}
+      <div
+        className={cn(
+          "fixed bottom-6 right-6 z-50",
+          "glass-thick rounded-2xl p-5 min-w-[220px] max-w-[380px]",
+          "animate-float-gentle apple-card",
+          "transition-all duration-500 ease-out",
+          (state === "listening" || state === "processing") && "scale-105",
+          className,
+        )}
+      >
+        <div className="flex items-start space-x-3">
+          <button
+            onClick={toggleListening}
+            disabled={!isAvailable || state === "processing"}
+            className={cn(
+              "relative w-14 h-14 rounded-full transition-all duration-300",
+              "flex items-center justify-center flex-shrink-0 fab",
+              "haptic-medium shadow-glass",
+              getButtonStyle(),
+              (!isAvailable || state === "processing") &&
+                "opacity-50 cursor-not-allowed",
+            )}
+          >
+            {getButtonContent()}
+          </button>
 
-        <div className="flex-1 min-w-0 ml-1">
-          <div className="flex items-center space-x-2 mb-2">
-            <span className="text-xl">{getStatusIcon()}</span>
-            <span className="text-sm font-semibold text-foreground truncate font-display">
-              Voice Assistant
-            </span>
-          </div>
-
-          <div className="text-sm text-muted-foreground leading-relaxed font-medium">
-            {getStatusText()}
-          </div>
-
-          {state === "listening" && (
-            <div className="flex space-x-1.5 mt-3">
-              <div
-                className="w-1 h-3 bg-primary rounded-full animate-bounce-gentle"
-                style={{ animationDelay: "0ms" }}
-              />
-              <div
-                className="w-1 h-4 bg-primary rounded-full animate-bounce-gentle"
-                style={{ animationDelay: "200ms" }}
-              />
-              <div
-                className="w-1 h-3 bg-primary rounded-full animate-bounce-gentle"
-                style={{ animationDelay: "400ms" }}
-              />
-              <div
-                className="w-1 h-5 bg-primary rounded-full animate-bounce-gentle"
-                style={{ animationDelay: "600ms" }}
-              />
+          <div className="flex-1 min-w-0 ml-1">
+            <div className="flex items-center space-x-2 mb-2">
+              <span className="text-xl">{getStatusIcon()}</span>
+              <span className="text-sm font-semibold text-foreground truncate font-display">
+                Voice Assistant
+              </span>
             </div>
-          )}
+
+            <div className="text-sm text-muted-foreground leading-relaxed font-medium">
+              {getStatusText()}
+            </div>
+
+            {state === "listening" && (
+              <div className="flex space-x-1.5 mt-3">
+                <div
+                  className="w-1 h-3 bg-primary rounded-full animate-bounce-gentle"
+                  style={{ animationDelay: "0ms" }}
+                />
+                <div
+                  className="w-1 h-4 bg-primary rounded-full animate-bounce-gentle"
+                  style={{ animationDelay: "200ms" }}
+                />
+                <div
+                  className="w-1 h-3 bg-primary rounded-full animate-bounce-gentle"
+                  style={{ animationDelay: "400ms" }}
+                />
+                <div
+                  className="w-1 h-5 bg-primary rounded-full animate-bounce-gentle"
+                  style={{ animationDelay: "600ms" }}
+                />
+              </div>
+            )}
+          </div>
         </div>
+
+        {!isAvailable && (
+          <div className="mt-4 pt-4 border-t border-border/30">
+            <div className="text-xs text-destructive flex items-center space-x-2 font-medium">
+              <AlertCircle className="w-3.5 h-3.5" />
+              <span>Voice recognition not supported</span>
+            </div>
+          </div>
+        )}
+
+        {state === "idle" && isAvailable && (
+          <div className="mt-4 pt-4 border-t border-border/30">
+            <div className="text-xs text-muted-foreground leading-relaxed">
+              <div className="font-medium text-foreground mb-1">
+                Try saying:
+              </div>
+              <div className="space-y-1">
+                <div>"Add task: Buy groceries and call mom"</div>
+                <div>"Mark Buy groceries as done"</div>
+                <div>"Delete the Call dentist task"</div>
+                <div>"Change Buy groceries to Buy organic groceries"</div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
-      {!isAvailable && (
-        <div className="mt-4 pt-4 border-t border-border/30">
-          <div className="text-xs text-destructive flex items-center space-x-2 font-medium">
-            <AlertCircle className="w-3.5 h-3.5" />
-            <span>Voice recognition not supported</span>
-          </div>
-        </div>
+      {/* Confirmation Dialog */}
+      {confirmationData && (
+        <ConfirmationDialog
+          isOpen={showConfirmation}
+          onClose={() => {
+            setShowConfirmation(false);
+            setConfirmationData(null);
+          }}
+          onConfirm={handleConfirmation}
+          task={confirmationData.task}
+          action={confirmationData.action}
+          message={confirmationData.message}
+          newContent={confirmationData.newContent}
+          onVoiceResponse={handleVoiceResponse}
+        />
       )}
 
-      {state === "idle" && isAvailable && (
-        <div className="mt-4 pt-4 border-t border-border/30">
-          <div className="text-xs text-muted-foreground leading-relaxed">
-            <div className="font-medium text-foreground mb-1">Try saying:</div>
-            "Add task", "Remind me to...", "Schedule meeting", "Mark complete"
-          </div>
-        </div>
+      {/* Disambiguation Dialog */}
+      {disambiguationData && (
+        <DisambiguationDialog
+          isOpen={showDisambiguation}
+          onClose={() => {
+            setShowDisambiguation(false);
+            setDisambiguationData(null);
+          }}
+          onSelect={handleDisambiguation}
+          tasks={disambiguationData.tasks}
+          query={disambiguationData.query}
+          action={disambiguationData.action}
+          message={disambiguationData.message}
+        />
       )}
-    </div>
+    </>
   );
 }

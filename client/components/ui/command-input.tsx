@@ -8,7 +8,7 @@ import {
   Mic,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { GeminiService } from "@/lib/gemini-service";
+import { SmartTaskAssistant } from "@/lib/smart-assistant";
 import { StorageService } from "@/lib/storage-service";
 
 interface CommandInputProps {
@@ -22,15 +22,23 @@ const quickActions = [
   {
     icon: CheckSquare,
     label: "Add Task",
-    command: "add task meeting with team",
+    command: "Add task: Buy groceries and call mom",
   },
   {
     icon: Calendar,
     label: "Schedule",
-    command: "schedule meeting tomorrow at 2 PM",
+    command: "Create a task: Submit assignment before 5 PM tomorrow",
   },
-  { icon: FileText, label: "Notes", command: "add note project ideas" },
-  { icon: Sparkles, label: "Complete", command: "mark task complete" },
+  {
+    icon: FileText,
+    label: "Complete",
+    command: "Mark the task 'Buy groceries' as done",
+  },
+  {
+    icon: Sparkles,
+    label: "Modify",
+    command: "Change task 'Buy groceries' to 'Buy groceries and fruits'",
+  },
 ];
 
 export function CommandInput({
@@ -47,46 +55,15 @@ export function CommandInput({
     setIsProcessing(true);
 
     try {
-      const command = await GeminiService.parseVoiceCommand(commandText);
+      const result = await SmartTaskAssistant.processCommand(commandText);
 
-      switch (command.type) {
-        case "task":
-        case "reminder":
-        case "meeting":
-        case "note":
-          const newTask = {
-            title: command.title,
-            description: command.description,
-            priority: command.priority || ("medium" as const),
-            status: "pending" as const,
-            dueDate:
-              command.date && command.time
-                ? new Date(`${command.date}T${command.time}`)
-                : command.date
-                  ? new Date(command.date)
-                  : undefined,
-            tags: [command.type],
-          };
-
-          StorageService.addTask(newTask);
-          onTaskUpdate?.();
-          break;
-
-        case "complete":
-          const pendingTasks = StorageService.getTasksByStatus("pending");
-          if (pendingTasks.length > 0) {
-            StorageService.updateTaskStatus(pendingTasks[0].id, "completed");
-            onTaskUpdate?.();
-          }
-          break;
-
-        case "delete":
-          const allTasks = StorageService.getTasks();
-          if (allTasks.length > 0) {
-            StorageService.deleteTask(allTasks[0].id);
-            onTaskUpdate?.();
-          }
-          break;
+      if (result.success) {
+        onTaskUpdate?.();
+        console.log("Command executed successfully:", result.message);
+      } else {
+        // For non-successful results, we'd need to handle dialogs here too
+        // For now, just log the conversational message
+        console.log("Assistant response:", result.message);
       }
     } catch (error) {
       console.error("Error processing command:", error);
