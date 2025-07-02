@@ -127,7 +127,7 @@ export default function Index() {
   return (
     <div className="min-h-screen relative overflow-hidden">
       {/* Command Input */}
-      <CommandInput onCommand={handleCommand} />
+      <CommandInput onCommand={handleCommand} onTaskUpdate={handleTaskUpdate} />
 
       {/* Header */}
       <header className="relative z-30 pt-20 pb-8 px-6">
