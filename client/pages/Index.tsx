@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
 import { Plus, Calendar } from "lucide-react";
 import { TaskCard, Task, TaskStatus } from "@/components/ui/task-card";
-import { ExactTaskAssistant } from "@/components/ui/exact-task-assistant";
+import { HybridVoiceAssistant } from "@/components/ui/hybrid-voice-assistant";
 import { CommandInput } from "@/components/ui/command-input";
 import { AppleNavbar } from "@/components/ui/apple-navbar";
 import { StorageService } from "@/lib/storage-service";
-import { ExactVoiceProcessor } from "@/lib/exact-voice-processor";
+import { HybridTaskProcessor } from "@/lib/hybrid-task-processor";
 import { cn } from "@/lib/utils";
 
 export default function Index() {
@@ -96,13 +96,13 @@ export default function Index() {
 
   const handleCommand = async (command: string) => {
     try {
-      const result = ExactVoiceProcessor.processVoiceCommand(command);
+      const result = HybridTaskProcessor.processCommand(command);
 
       if (result.success) {
         loadTasks(); // Refresh the task list
         console.log("Command executed:", result.message);
       } else {
-        // The ExactTaskAssistant component will handle confirmations
+        // The HybridVoiceAssistant component will handle confirmations
         console.log("Assistant response:", result.message);
       }
     } catch (error) {
@@ -288,8 +288,8 @@ export default function Index() {
         </div>
       </main>
 
-      {/* Exact Task Assistant */}
-      <ExactTaskAssistant onTaskUpdate={handleTaskUpdate} />
+      {/* Hybrid Voice Assistant */}
+      <HybridVoiceAssistant onTaskUpdate={handleTaskUpdate} />
 
       {/* Background Decoration */}
       <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">

@@ -8,7 +8,7 @@ import {
   Mic,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { ExactVoiceProcessor } from "@/lib/exact-voice-processor";
+import { HybridTaskProcessor } from "@/lib/hybrid-task-processor";
 import { StorageService } from "@/lib/storage-service";
 
 interface CommandInputProps {
@@ -22,22 +22,22 @@ const quickActions = [
   {
     icon: CheckSquare,
     label: "Add Task",
-    command: "Add task buy groceries and call mom",
+    command: "Add task call my friend at 3 PM",
   },
   {
     icon: Calendar,
-    label: "Add Scheduled",
-    command: "Add task submit assignment before 5 PM tomorrow",
+    label: "Schedule",
+    command: "Create a task to submit assignment tomorrow",
   },
   {
     icon: FileText,
     label: "Complete",
-    command: "Complete task buy groceries",
+    command: "Mark call my friend as done",
   },
   {
     icon: Sparkles,
     label: "Delete",
-    command: "Delete task buy groceries",
+    command: "Delete the buy groceries task",
   },
 ];
 
@@ -55,13 +55,13 @@ export function CommandInput({
     setIsProcessing(true);
 
     try {
-      const result = ExactVoiceProcessor.processVoiceCommand(commandText);
+      const result = HybridTaskProcessor.processCommand(commandText);
 
       if (result.success) {
         onTaskUpdate?.();
         console.log("Command executed successfully:", result.message);
       } else {
-        // For non-successful results, the ExactTaskAssistant handles confirmations
+        // For non-successful results, the HybridVoiceAssistant handles confirmations
         console.log("Assistant response:", result.message);
       }
     } catch (error) {
