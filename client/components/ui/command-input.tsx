@@ -22,15 +22,23 @@ const quickActions = [
   {
     icon: CheckSquare,
     label: "Add Task",
-    command: "add task meeting with team",
+    command: "Add task: Buy groceries and call mom",
   },
   {
     icon: Calendar,
     label: "Schedule",
-    command: "schedule meeting tomorrow at 2 PM",
+    command: "Create a task: Submit assignment before 5 PM tomorrow",
   },
-  { icon: FileText, label: "Notes", command: "add note project ideas" },
-  { icon: Sparkles, label: "Complete", command: "mark task complete" },
+  {
+    icon: FileText,
+    label: "Complete",
+    command: "Mark the task 'Buy groceries' as done",
+  },
+  {
+    icon: Sparkles,
+    label: "Modify",
+    command: "Change task 'Buy groceries' to 'Buy groceries and fruits'",
+  },
 ];
 
 export function CommandInput({
