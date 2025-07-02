@@ -27,7 +27,7 @@ interface TaskCommand {
 }
 
 const GEMINI_API_KEY = "AIzaSyDpHIsbZ5agfx3tvA3VHjo7SuS6m1CEOcc";
-const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`;
+const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`;
 
 export class GeminiService {
   static async parseVoiceCommand(transcript: string): Promise<TaskCommand> {
