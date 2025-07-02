@@ -74,14 +74,33 @@ export function VoiceAssistant({
     setTranscript("");
 
     try {
-      // Use the enhanced voice command processor
-      const result =
-        await VoiceCommandProcessor.processVoiceCommand(finalTranscript);
+      const result = await SmartTaskAssistant.processCommand(finalTranscript);
 
       if (result.success) {
         setFeedback(result.message);
         setState("success");
         onTaskUpdate?.();
+      } else if (result.requiresConfirmation && result.taskAffected) {
+        // Show confirmation dialog
+        setConfirmationData({
+          task: result.taskAffected,
+          action: result.action as "delete" | "modify",
+          message: result.message,
+        });
+        setShowConfirmation(true);
+        setFeedback(result.message);
+        setState("idle");
+      } else if (result.requiresDisambiguation && result.candidateTasks) {
+        // Show disambiguation dialog
+        setDisambiguationData({
+          tasks: result.candidateTasks,
+          query: finalTranscript,
+          action: result.action as "complete" | "delete" | "modify",
+          message: result.message,
+        });
+        setShowDisambiguation(true);
+        setFeedback(result.message);
+        setState("idle");
       } else {
         setError(result.message);
         setState("error");
