@@ -89,13 +89,14 @@ export default function Index() {
 
   const handleCommand = async (command: string) => {
     try {
-      const result = await VoiceCommandProcessor.processVoiceCommand(command);
+      const result = await SmartTaskAssistant.processCommand(command);
 
       if (result.success) {
         loadTasks(); // Refresh the task list
         console.log("Command executed:", result.message);
       } else {
-        console.error("Command failed:", result.message);
+        // The VoiceAssistant component will handle dialogs
+        console.log("Assistant response:", result.message);
       }
     } catch (error) {
       console.error("Error handling command:", error);
