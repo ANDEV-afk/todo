@@ -8,7 +8,7 @@ import {
   Mic,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { VoiceCommandProcessor } from "@/lib/voice-command-processor";
+import { SmartTaskAssistant } from "@/lib/smart-assistant";
 import { StorageService } from "@/lib/storage-service";
 
 interface CommandInputProps {
