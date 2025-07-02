@@ -5,6 +5,7 @@ import { VoiceAssistant } from "@/components/ui/voice-assistant";
 import { CommandInput } from "@/components/ui/command-input";
 import { AppleNavbar } from "@/components/ui/apple-navbar";
 import { StorageService } from "@/lib/storage-service";
+import { VoiceCommandProcessor } from "@/lib/voice-command-processor";
 import { cn } from "@/lib/utils";
 
 export default function Index() {
