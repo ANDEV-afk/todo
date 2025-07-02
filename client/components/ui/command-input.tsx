@@ -47,46 +47,17 @@ export function CommandInput({
     setIsProcessing(true);
 
     try {
-      const command = await GeminiService.parseVoiceCommand(commandText);
+      // Use the enhanced voice command processor
+      const result =
+        await VoiceCommandProcessor.processVoiceCommand(commandText);
 
-      switch (command.type) {
-        case "task":
-        case "reminder":
-        case "meeting":
-        case "note":
-          const newTask = {
-            title: command.title,
-            description: command.description,
-            priority: command.priority || ("medium" as const),
-            status: "pending" as const,
-            dueDate:
-              command.date && command.time
-                ? new Date(`${command.date}T${command.time}`)
-                : command.date
-                  ? new Date(command.date)
-                  : undefined,
-            tags: [command.type],
-          };
-
-          StorageService.addTask(newTask);
-          onTaskUpdate?.();
-          break;
-
-        case "complete":
-          const pendingTasks = StorageService.getTasksByStatus("pending");
-          if (pendingTasks.length > 0) {
-            StorageService.updateTaskStatus(pendingTasks[0].id, "completed");
-            onTaskUpdate?.();
-          }
-          break;
-
-        case "delete":
-          const allTasks = StorageService.getTasks();
-          if (allTasks.length > 0) {
-            StorageService.deleteTask(allTasks[0].id);
-            onTaskUpdate?.();
-          }
-          break;
+      if (result.success) {
+        onTaskUpdate?.();
+        // Show success feedback briefly
+        console.log("Command executed successfully:", result.message);
+      } else {
+        // Show error feedback
+        console.error("Command failed:", result.message);
       }
     } catch (error) {
       console.error("Error processing command:", error);
