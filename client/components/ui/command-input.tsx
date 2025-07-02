@@ -8,12 +8,13 @@ import {
   Mic,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { SmartTaskAssistant } from "@/lib/smart-assistant";
+import { SmartCommandProcessor } from "@/lib/smart-command-processor";
 import { StorageService } from "@/lib/storage-service";
 
 interface CommandInputProps {
   onCommand?: (command: string) => void;
   onTaskUpdate?: () => void;
+  onTaskCreate?: (taskContent: string) => void;
   placeholder?: string;
   className?: string;
 }
@@ -22,28 +23,29 @@ const quickActions = [
   {
     icon: CheckSquare,
     label: "Add Task",
-    command: "Add task: Buy groceries and call mom",
+    command: "Add task call my friend at 3 PM",
   },
   {
     icon: Calendar,
     label: "Schedule",
-    command: "Create a task: Submit assignment before 5 PM tomorrow",
+    command: "Create a task to submit assignment tomorrow",
   },
   {
     icon: FileText,
     label: "Complete",
-    command: "Mark the task 'Buy groceries' as done",
+    command: "Mark call my friend as done",
   },
   {
     icon: Sparkles,
-    label: "Modify",
-    command: "Change task 'Buy groceries' to 'Buy groceries and fruits'",
+    label: "Delete",
+    command: "Delete the buy groceries task",
   },
 ];
 
 export function CommandInput({
   onCommand,
   onTaskUpdate,
+  onTaskCreate,
   placeholder = "What would you like to do?",
   className,
 }: CommandInputProps) {
@@ -55,14 +57,16 @@ export function CommandInput({
     setIsProcessing(true);
 
     try {
-      const result = await SmartTaskAssistant.processCommand(commandText);
+      const result = SmartCommandProcessor.processCommand(commandText);
 
-      if (result.success) {
+      if (result.success && result.createEditableTask && result.taskContent) {
+        onTaskCreate?.(result.taskContent);
+        console.log("Created editable task:", result.message);
+      } else if (result.success) {
         onTaskUpdate?.();
         console.log("Command executed successfully:", result.message);
       } else {
-        // For non-successful results, we'd need to handle dialogs here too
-        // For now, just log the conversational message
+        // For non-successful results, the AdvancedVoiceAssistant handles confirmations
         console.log("Assistant response:", result.message);
       }
     } catch (error) {

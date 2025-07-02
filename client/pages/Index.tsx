@@ -1,80 +1,44 @@
 import { useState, useEffect } from "react";
 import { Plus, Calendar } from "lucide-react";
 import { TaskCard, Task, TaskStatus } from "@/components/ui/task-card";
-import { VoiceAssistant } from "@/components/ui/voice-assistant";
+import { EditableTaskCard } from "@/components/ui/editable-task-card";
+import { AdvancedVoiceAssistant } from "@/components/ui/advanced-voice-assistant";
 import { CommandInput } from "@/components/ui/command-input";
 import { AppleNavbar } from "@/components/ui/apple-navbar";
 import { StorageService } from "@/lib/storage-service";
-import { SmartTaskAssistant } from "@/lib/smart-assistant";
+import { SmartCommandProcessor } from "@/lib/smart-command-processor";
+import { useEditableTasks } from "@/hooks/use-editable-tasks";
 import { cn } from "@/lib/utils";
 
 export default function Index() {
-  const [tasks, setTasks] = useState<Task[]>([]);
   const [filter, setFilter] = useState<"all" | TaskStatus>("all");
   const [view, setView] = useState<"grid" | "list">("grid");
+
+  const {
+    editableTasks,
+    loadTasks,
+    createNewTask,
+    saveTask,
+    deleteTask,
+    markTaskDone,
+    cancelTask,
+    getTaskNumber,
+    getTaskStats,
+  } = useEditableTasks();
 
   // Load tasks from storage on component mount
   useEffect(() => {
     loadTasks();
-  }, []);
-
-  const loadTasks = () => {
-    const storedTasks = StorageService.getTasks();
-
-    // If no tasks exist, add some sample data
-    if (storedTasks.length === 0) {
-      const sampleTasks = [
-        {
-          title: "Try smart voice commands! 🎤",
-          description:
-            "Say: 'Add task: Submit assignment before 5 PM tomorrow' or 'Mark Buy groceries as done'",
-          priority: "high" as const,
-          status: "pending" as const,
-          tags: ["demo", "voice"],
-        },
-        {
-          title: "Buy groceries",
-          description: "Get milk, bread, eggs, and fresh vegetables",
-          priority: "medium" as const,
-          status: "pending" as const,
-          dueDate: new Date(Date.now() + 24 * 60 * 60 * 1000), // Tomorrow
-          tags: ["shopping", "personal"],
-        },
-        {
-          title: "Call dentist",
-          description: "Schedule routine checkup appointment",
-          priority: "low" as const,
-          status: "pending" as const,
-          tags: ["health", "call"],
-        },
-        {
-          title: "Review quarterly report",
-          description: "Go through Q3 financial data and prepare summary",
-          priority: "high" as const,
-          status: "pending" as const,
-          dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), // 2 days from now
-          tags: ["work", "important"],
-        },
-      ];
-
-      sampleTasks.forEach((task) => StorageService.addTask(task));
-    }
-
-    setTasks(StorageService.getTasks());
-  };
+  }, [loadTasks]);
 
   const handleStatusChange = (taskId: string, status: TaskStatus) => {
-    const success = StorageService.updateTaskStatus(taskId, status);
-    if (success) {
-      loadTasks(); // Reload from storage to stay in sync
+    if (status === "completed") {
+      markTaskDone(taskId);
     }
   };
 
   const handleDeleteTask = (taskId: string) => {
-    const success = StorageService.deleteTask(taskId);
-    if (success) {
-      loadTasks(); // Reload from storage to stay in sync
-    }
+    deleteTask(taskId);
   };
 
   const handleTaskUpdate = () => {
@@ -84,25 +48,22 @@ export default function Index() {
 
   const handleAddTask = () => {
     // Quick add task without voice
-    const newTask: Omit<Task, "id"> = {
-      title: "New task",
-      priority: "medium",
-      status: "pending",
-      tags: ["manual"],
-    };
-    StorageService.addTask(newTask);
-    loadTasks();
+    createNewTask("New task");
   };
 
   const handleCommand = async (command: string) => {
     try {
-      const result = await SmartTaskAssistant.processCommand(command);
+      const result = SmartCommandProcessor.processCommand(command);
 
-      if (result.success) {
-        loadTasks(); // Refresh the task list
+      if (result.success && result.createEditableTask && result.taskContent) {
+        // Create immediate editable task card
+        createNewTask(result.taskContent);
+        console.log("Created editable task:", result.message);
+      } else if (result.success) {
+        loadTasks(); // Refresh for other operations
         console.log("Command executed:", result.message);
       } else {
-        // The VoiceAssistant component will handle dialogs
+        // The AdvancedVoiceAssistant component will handle confirmations
         console.log("Assistant response:", result.message);
       }
     } catch (error) {
@@ -110,24 +71,29 @@ export default function Index() {
     }
   };
 
-  const filteredTasks = tasks.filter((task) =>
-    filter === "all" ? true : task.status === filter,
-  );
+  const stats = getTaskStats();
+  const filteredTasks = editableTasks.filter((task) => {
+    if (filter === "all") return true;
+    return task.status === filter;
+  });
 
-  const completedCount = tasks.filter(
-    (task) => task.status === "completed",
-  ).length;
-  const totalCount = tasks.length;
+  const completedCount = stats.completed;
+  const totalCount = stats.total;
+  const pendingCount = stats.pending;
 
   return (
     <div className="min-h-screen relative">
       {/* Command Input */}
-      <CommandInput onCommand={handleCommand} onTaskUpdate={handleTaskUpdate} />
+      <CommandInput
+        onCommand={handleCommand}
+        onTaskUpdate={handleTaskUpdate}
+        onTaskCreate={createNewTask}
+      />
 
       {/* Apple-style Navbar */}
       <AppleNavbar
         title="Good morning! 👋"
-        subtitle={`You have ${tasks.length - completedCount} tasks pending`}
+        subtitle={`You have ${pendingCount} tasks pending`}
       />
 
       {/* Main Content */}
@@ -174,7 +140,11 @@ export default function Index() {
                     In Progress
                   </p>
                   <p className="text-3xl font-bold text-foreground font-display">
-                    {tasks.filter((t) => t.status === "in-progress").length}
+                    {
+                      editableTasks.filter(
+                        (t) => !t.isNew && t.status === "in-progress",
+                      ).length
+                    }
                   </p>
                 </div>
                 <div className="w-14 h-14 rounded-2xl bg-warning/20 flex items-center justify-center shadow-sm">
@@ -252,9 +222,24 @@ export default function Index() {
           </div>
           {/* Task Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredTasks.map((task, index) => {
-              // Calculate task number based on original position in all tasks
-              const taskNumber = tasks.findIndex((t) => t.id === task.id) + 1;
+            {filteredTasks.map((task) => {
+              const taskNumber = getTaskNumber(task.id);
+
+              // Show editable cards for new/editing tasks, regular cards for others
+              if (task.isNew || task.isEditing) {
+                return (
+                  <EditableTaskCard
+                    key={task.id}
+                    task={task}
+                    taskNumber={taskNumber}
+                    onSave={saveTask}
+                    onDelete={deleteTask}
+                    onMarkDone={markTaskDone}
+                    onCancel={cancelTask}
+                  />
+                );
+              }
+
               return (
                 <TaskCard
                   key={task.id}
@@ -288,8 +273,11 @@ export default function Index() {
         </div>
       </main>
 
-      {/* Voice Assistant */}
-      <VoiceAssistant onTaskUpdate={handleTaskUpdate} />
+      {/* Advanced Voice Assistant */}
+      <AdvancedVoiceAssistant
+        onTaskUpdate={handleTaskUpdate}
+        onTaskCreate={createNewTask}
+      />
 
       {/* Background Decoration */}
       <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
