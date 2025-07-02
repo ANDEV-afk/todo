@@ -9,7 +9,9 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { voiceService } from "@/lib/voice-service";
-import { VoiceCommandProcessor } from "@/lib/voice-command-processor";
+import { SmartTaskAssistant } from "@/lib/smart-assistant";
+import { ConfirmationDialog } from "./confirmation-dialog";
+import { DisambiguationDialog } from "./disambiguation-dialog";
 import { StorageService } from "@/lib/storage-service";
 import { Task } from "./task-card";
 
