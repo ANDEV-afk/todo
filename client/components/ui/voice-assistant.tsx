@@ -56,70 +56,21 @@ export function VoiceAssistant({
     setTranscript("");
 
     try {
-      const command = await GeminiService.parseVoiceCommand(finalTranscript);
+      // Use the enhanced voice command processor
+      const result =
+        await VoiceCommandProcessor.processVoiceCommand(finalTranscript);
 
-      switch (command.type) {
-        case "task":
-        case "reminder":
-        case "meeting":
-        case "note":
-          const newTask: Omit<Task, "id"> = {
-            title: command.title,
-            description: command.description,
-            priority: command.priority || "medium",
-            status: "pending",
-            dueDate:
-              command.date && command.time
-                ? new Date(`${command.date}T${command.time}`)
-                : command.date
-                  ? new Date(command.date)
-                  : undefined,
-            tags: [command.type],
-          };
-
-          StorageService.addTask(newTask);
-          setFeedback(`✅ Added ${command.type}: "${command.title}"`);
-          setState("success");
-          onTaskUpdate?.();
-          break;
-
-        case "complete":
-          // Mark the most recent task as complete if no specific task mentioned
-          const pendingTasks = StorageService.getTasksByStatus("pending");
-          if (pendingTasks.length > 0) {
-            const taskToComplete = pendingTasks[0];
-            StorageService.updateTaskStatus(taskToComplete.id, "completed");
-            setFeedback(`✅ Marked "${taskToComplete.title}" as complete`);
-            setState("success");
-            onTaskUpdate?.();
-          } else {
-            setError("No pending tasks to complete");
-            setState("error");
-          }
-          break;
-
-        case "delete":
-          // Delete the most recent task if no specific task mentioned
-          const allTasks = StorageService.getTasks();
-          if (allTasks.length > 0) {
-            const taskToDelete = allTasks[0];
-            StorageService.deleteTask(taskToDelete.id);
-            setFeedback(`🗑️ Deleted "${taskToDelete.title}"`);
-            setState("success");
-            onTaskUpdate?.();
-          } else {
-            setError("No tasks to delete");
-            setState("error");
-          }
-          break;
-
-        default:
-          setError("Sorry, I didn't understand that command");
-          setState("error");
+      if (result.success) {
+        setFeedback(result.message);
+        setState("success");
+        onTaskUpdate?.();
+      } else {
+        setError(result.message);
+        setState("error");
       }
     } catch (error) {
       console.error("Error processing voice command:", error);
-      setError("Failed to process voice command");
+      setError("Sorry, I couldn't process that command. Please try again.");
       setState("error");
     }
   };
