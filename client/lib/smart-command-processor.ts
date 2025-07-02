@@ -247,7 +247,7 @@ export class SmartCommandProcessor {
   }
 
   /**
-   * Execute complete task command with intelligent task matching
+   * Execute complete task command with confirmation for security
    */
   private static executeCompleteTask(intent: ParsedIntent): SmartCommandResult {
     if (!intent.content) {
@@ -259,21 +259,24 @@ export class SmartCommandProcessor {
       };
     }
 
-    const tasks = StorageService.getTasks();
+    const tasks = StorageService.getTasks().filter(
+      (t) => t.status !== "completed",
+    );
     const matchingTask = this.findBestTaskMatch(intent.content, tasks);
 
     if (!matchingTask) {
       const availableTasks = tasks
-        .filter((t) => t.status !== "completed")
         .slice(0, 3)
-        .map((t) => `"${t.title}"`)
+        .map((t, i) => `${i + 1}. "${t.title}"`)
         .join(", ");
 
       return {
         success: false,
         message: `No task found matching: "${intent.content}". Available tasks: ${availableTasks}`,
         confidence: intent.confidence,
-        spokenReply: `I couldn't find that task. Your current tasks are: ${availableTasks}`,
+        spokenReply: availableTasks
+          ? `I couldn't find that task. Your current tasks are: ${availableTasks}`
+          : "I couldn't find that task. You have no pending tasks.",
       };
     }
 
@@ -287,32 +290,21 @@ export class SmartCommandProcessor {
       };
     }
 
-    try {
-      const success = StorageService.updateTaskStatus(
-        matchingTask.id,
-        "completed",
-      );
+    // Set up confirmation for mark as done
+    this.pendingConfirmation = {
+      taskId: matchingTask.id,
+      taskTitle: matchingTask.title,
+      action: "complete",
+    };
 
-      if (success) {
-        return {
-          success: true,
-          message: `Completed task: "${matchingTask.title}"`,
-          action: "complete",
-          taskAffected: matchingTask,
-          confidence: intent.confidence,
-          spokenReply: `Marked "${matchingTask.title}" as done. Great job!`,
-        };
-      } else {
-        throw new Error("Update failed");
-      }
-    } catch (error) {
-      return {
-        success: false,
-        message: "Failed to complete task. Please try again.",
-        confidence: intent.confidence,
-        spokenReply: "Sorry, I couldn't complete that task. Please try again.",
-      };
-    }
+    return {
+      success: false,
+      message: `Are you sure you want to mark "${matchingTask.title}" as done? Say 'yes' to confirm or 'no' to cancel.`,
+      requiresConfirmation: true,
+      taskAffected: matchingTask,
+      confidence: intent.confidence,
+      spokenReply: `Are you sure you want to mark "${matchingTask.title}" as done? Say yes to confirm or no to cancel.`,
+    };
   }
 
   /**
@@ -406,47 +398,78 @@ export class SmartCommandProcessor {
   }
 
   /**
-   * Find best matching task using fuzzy matching
+   * Find best matching task using number or fuzzy text matching
    */
   private static findBestTaskMatch(query: string, tasks: Task[]): Task | null {
     if (!query || !tasks.length) return null;
 
-    const queryLower = query.toLowerCase();
+    const queryLower = query.toLowerCase().trim();
+
+    // Check for task number patterns
+    const numberMatch = queryLower.match(/(?:task\s+)?(?:number\s+)?(\d+)/);
+    if (numberMatch) {
+      const taskNumber = parseInt(numberMatch[1]);
+      const taskIndex = taskNumber - 1; // Convert to 0-based index
+
+      if (taskIndex >= 0 && taskIndex < tasks.length) {
+        return tasks[taskIndex];
+      }
+    }
+
+    // Remove common task-related words for better matching
+    const cleanQuery = queryLower
+      .replace(/^(task|the task|a task)\s+/i, "")
+      .replace(/\s+(task)$/i, "")
+      .trim();
 
     // Exact match first
     let bestMatch = tasks.find(
-      (task) => task.title.toLowerCase() === queryLower,
+      (task) => task.title.toLowerCase() === cleanQuery,
     );
 
     if (bestMatch) return bestMatch;
 
-    // Partial match
+    // Partial match with high confidence
     bestMatch = tasks.find((task) =>
-      task.title.toLowerCase().includes(queryLower),
+      task.title.toLowerCase().includes(cleanQuery),
     );
 
     if (bestMatch) return bestMatch;
 
-    // Word-based matching
-    const queryWords = queryLower.split(" ").filter((w) => w.length > 2);
+    // Word-based matching with minimum length requirement
+    const queryWords = cleanQuery.split(" ").filter((w) => w.length > 2);
     if (queryWords.length > 0) {
-      bestMatch = tasks.find((task) => {
+      // Find task with most word matches
+      let maxMatches = 0;
+      let bestWordMatch = null;
+
+      for (const task of tasks) {
         const taskTitle = task.title.toLowerCase();
-        return queryWords.some((word) => taskTitle.includes(word));
-      });
+        const matches = queryWords.filter((word) =>
+          taskTitle.includes(word),
+        ).length;
+
+        if (
+          matches > maxMatches &&
+          matches >= Math.ceil(queryWords.length / 2)
+        ) {
+          maxMatches = matches;
+          bestWordMatch = task;
+        }
+      }
+
+      if (bestWordMatch) return bestWordMatch;
     }
 
-    return bestMatch || null;
+    return null;
   }
 
   /**
-   * Handle confirmation responses
+   * Handle confirmation responses with enhanced security
    */
   private static handleConfirmationResponse(input: string): SmartCommandResult {
     const lowerResponse = input.toLowerCase().trim();
     const confirmation = this.pendingConfirmation;
-
-    this.pendingConfirmation = null;
 
     if (!confirmation) {
       return {
@@ -459,6 +482,8 @@ export class SmartCommandProcessor {
 
     // Check for affirmative responses
     if (this.isAffirmativeResponse(lowerResponse)) {
+      this.pendingConfirmation = null; // Clear only on successful execution
+
       if (confirmation.action === "delete") {
         try {
           const success = StorageService.deleteTask(confirmation.taskId);
@@ -467,8 +492,8 @@ export class SmartCommandProcessor {
               success: true,
               message: `Deleted task: "${confirmation.taskTitle}"`,
               action: "delete",
-              confidence: 0.9,
-              spokenReply: `Deleted "${confirmation.taskTitle}".`,
+              confidence: 0.95,
+              spokenReply: `Task deleted. "${confirmation.taskTitle}" has been removed from your list.`,
             };
           } else {
             throw new Error("Delete failed");
@@ -478,7 +503,34 @@ export class SmartCommandProcessor {
             success: false,
             message: "Failed to delete task. Please try again.",
             confidence: 0.5,
-            spokenReply: "Sorry, I couldn't delete that task.",
+            spokenReply:
+              "Sorry, I couldn't delete that task. Please try again.",
+          };
+        }
+      } else if (confirmation.action === "complete") {
+        try {
+          const success = StorageService.updateTaskStatus(
+            confirmation.taskId,
+            "completed",
+          );
+          if (success) {
+            return {
+              success: true,
+              message: `Completed task: "${confirmation.taskTitle}"`,
+              action: "complete",
+              confidence: 0.95,
+              spokenReply: `Task completed! I've marked "${confirmation.taskTitle}" as done. Great job!`,
+            };
+          } else {
+            throw new Error("Update failed");
+          }
+        } catch (error) {
+          return {
+            success: false,
+            message: "Failed to complete task. Please try again.",
+            confidence: 0.5,
+            spokenReply:
+              "Sorry, I couldn't complete that task. Please try again.",
           };
         }
       }
@@ -486,22 +538,22 @@ export class SmartCommandProcessor {
 
     // Check for negative responses
     if (this.isNegativeResponse(lowerResponse)) {
+      this.pendingConfirmation = null;
       return {
         success: true,
         message: "Action cancelled.",
         confidence: 0.9,
-        spokenReply: "Okay, I cancelled that action.",
+        spokenReply: `Okay, I cancelled that action. "${confirmation.taskTitle}" remains unchanged.`,
       };
     }
 
-    // Unclear response - restore confirmation
-    this.pendingConfirmation = confirmation;
+    // Unclear response - keep confirmation and ask again
     return {
       success: false,
-      message: `Please say "yes" to delete "${confirmation.taskTitle}" or "no" to cancel.`,
+      message: `I didn't understand. Please say "yes" to ${confirmation.action} "${confirmation.taskTitle}" or "no" to cancel.`,
       requiresConfirmation: true,
       confidence: 0.3,
-      spokenReply: "Please say yes to confirm or no to cancel.",
+      spokenReply: `I didn't understand. Please say yes to ${confirmation.action} the task, or no to cancel.`,
     };
   }
 
@@ -509,27 +561,45 @@ export class SmartCommandProcessor {
    * Generate helpful response for unknown commands
    */
   private static generateHelpResponse(input: string): SmartCommandResult {
+    const tasks = StorageService.getTasks();
+    const pendingTasks = tasks.filter((t) => t.status !== "completed");
+
+    let helpMessage =
+      "Sorry, I didn't understand that. Here's what you can say:";
+    let spokenHelp = "Sorry, I didn't understand. You can say:";
+
     const examples = [
       "Add task to buy groceries",
-      "Mark call mom as done",
-      "Delete the meeting task",
+      "Mark task number 1 as done",
+      "Delete task buy groceries",
       "Show my tasks",
     ];
 
+    if (pendingTasks.length > 0) {
+      const taskList = pendingTasks
+        .slice(0, 2)
+        .map((t, i) => `${i + 1}. "${t.title}"`)
+        .join(", ");
+      helpMessage += ` For example: ${examples.join(", ")}. Your current tasks are: ${taskList}`;
+      spokenHelp += ` Add task followed by what you want to do, Mark task number or task name as done, Delete task and the name, or Show my tasks. Your current tasks are: ${taskList}`;
+    } else {
+      helpMessage += ` For example: ${examples.join(", ")}`;
+      spokenHelp += ` Add task followed by what you want to do, Mark task as done, Delete task, or Show my tasks.`;
+    }
+
     return {
       success: false,
-      message: `I didn't understand "${input}". Try: ${examples.join(", ")}`,
+      message: helpMessage,
       confidence: 0,
-      spokenReply:
-        "I didn't understand that. Try saying 'Add task' followed by what you want to do, or 'Mark' and the task name 'as done'.",
+      spokenReply: spokenHelp,
     };
   }
 
   /**
-   * Check if response is affirmative
+   * Check if response is affirmative with enhanced patterns
    */
   private static isAffirmativeResponse(response: string): boolean {
-    const affirmative = [
+    const exact = [
       "yes",
       "y",
       "yeah",
@@ -544,15 +614,28 @@ export class SmartCommandProcessor {
       "go ahead",
       "proceed",
       "right",
+      "correct",
+      "affirmative",
     ];
-    return affirmative.includes(response);
+
+    const patterns = [
+      /^yes,?\s+(delete|complete|mark)/i,
+      /^(delete|complete|mark)\s+it/i,
+      /^go\s+ahead/i,
+    ];
+
+    // Check exact matches first
+    if (exact.includes(response)) return true;
+
+    // Check pattern matches
+    return patterns.some((pattern) => pattern.test(response));
   }
 
   /**
-   * Check if response is negative
+   * Check if response is negative with enhanced patterns
    */
   private static isNegativeResponse(response: string): boolean {
-    const negative = [
+    const exact = [
       "no",
       "n",
       "nope",
@@ -565,8 +648,20 @@ export class SmartCommandProcessor {
       "dont",
       "wait",
       "back",
+      "negative",
     ];
-    return negative.includes(response);
+
+    const patterns = [
+      /^no,?\s+(don't|dont)/i,
+      /^(don't|dont)\s+(delete|complete|mark)/i,
+      /^cancel\s+(that|it)/i,
+    ];
+
+    // Check exact matches first
+    if (exact.includes(response)) return true;
+
+    // Check pattern matches
+    return patterns.some((pattern) => pattern.test(response));
   }
 
   /**
