@@ -4,80 +4,82 @@ import { Plus, Filter, Calendar, User, Settings, Bell } from "lucide-react";
 import { TaskCard, Task, TaskStatus } from "@/components/ui/task-card";
 import { VoiceAssistant } from "@/components/ui/voice-assistant";
 import { CommandInput } from "@/components/ui/command-input";
+import { StorageService } from "@/lib/storage-service";
 import { cn } from "@/lib/utils";
 
-// Sample data
-const initialTasks: Task[] = [
-  {
-    id: "1",
-    title: "Review quarterly report",
-    description: "Go through Q3 financial data and prepare summary",
-    priority: "high",
-    status: "pending",
-    dueDate: new Date(2024, 11, 25, 14, 0),
-    tags: ["finance", "urgent"],
-  },
-  {
-    id: "2",
-    title: "Team standup meeting",
-    description: "Daily sync with the development team",
-    priority: "medium",
-    status: "pending",
-    dueDate: new Date(2024, 11, 23, 9, 30),
-    tags: ["meeting", "team"],
-  },
-  {
-    id: "3",
-    title: "Update project documentation",
-    description: "Document new API endpoints and features",
-    priority: "low",
-    status: "in-progress",
-    dueDate: new Date(2024, 11, 24, 16, 0),
-    tags: ["documentation", "api"],
-  },
-  {
-    id: "4",
-    title: "Client presentation prep",
-    description: "Prepare slides for tomorrow's client meeting",
-    priority: "urgent",
-    status: "pending",
-    dueDate: new Date(2024, 11, 23, 11, 0),
-    tags: ["presentation", "client"],
-  },
-];
-
 export default function Index() {
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [filter, setFilter] = useState<"all" | TaskStatus>("all");
   const [view, setView] = useState<"grid" | "list">("grid");
 
+  // Load tasks from storage on component mount
+  useEffect(() => {
+    loadTasks();
+  }, []);
+
+  const loadTasks = () => {
+    const storedTasks = StorageService.getTasks();
+    setTasks(storedTasks);
+  };
+
   const handleStatusChange = (taskId: string, status: TaskStatus) => {
-    setTasks((prev) =>
-      prev.map((task) => (task.id === taskId ? { ...task, status } : task)),
-    );
-  };
-
-  const handleDeleteTask = (taskId: string) => {
-    setTasks((prev) => prev.filter((task) => task.id !== taskId));
-  };
-
-  const handleVoiceTranscript = (transcript: string) => {
-    // Simple voice command processing
-    if (transcript.toLowerCase().includes("add task")) {
-      const newTask: Task = {
-        id: Date.now().toString(),
-        title: transcript.replace(/add task/i, "").trim() || "New voice task",
-        priority: "medium",
-        status: "pending",
-        tags: ["voice"],
-      };
-      setTasks((prev) => [newTask, ...prev]);
+    const success = StorageService.updateTaskStatus(taskId, status);
+    if (success) {
+      loadTasks(); // Reload from storage to stay in sync
     }
   };
 
+  const handleDeleteTask = (taskId: string) => {
+    const success = StorageService.deleteTask(taskId);
+    if (success) {
+      loadTasks(); // Reload from storage to stay in sync
+    }
+  };
+
+  const handleTaskUpdate = () => {
+    // Called by voice assistant when tasks are updated
+    loadTasks();
+  };
+
+  const handleAddTask = () => {
+    // Quick add task without voice
+    const newTask: Omit<Task, "id"> = {
+      title: "New task",
+      priority: "medium",
+      status: "pending",
+      tags: ["manual"],
+    };
+    StorageService.addTask(newTask);
+    loadTasks();
+  };
+
   const handleCommand = (command: string) => {
-    console.log("Command received:", command);
-    // Handle various commands here
+    const lowerCommand = command.toLowerCase();
+
+    if (
+      lowerCommand.includes("add task") ||
+      lowerCommand.includes("new task")
+    ) {
+      handleAddTask();
+    } else if (
+      lowerCommand.includes("complete") ||
+      lowerCommand.includes("done")
+    ) {
+      // Mark first pending task as complete
+      const pendingTasks = StorageService.getTasksByStatus("pending");
+      if (pendingTasks.length > 0) {
+        handleStatusChange(pendingTasks[0].id, "completed");
+      }
+    } else if (
+      lowerCommand.includes("delete") ||
+      lowerCommand.includes("remove")
+    ) {
+      // Delete most recent task
+      const allTasks = StorageService.getTasks();
+      if (allTasks.length > 0) {
+        handleDeleteTask(allTasks[0].id);
+      }
+    }
   };
 
   const filteredTasks = tasks.filter((task) =>
@@ -224,7 +226,10 @@ export default function Index() {
               </button>
             </div>
 
-            <button className="glass hover:glass-strong px-4 py-2 rounded-lg flex items-center space-x-2 transition-all">
+            <button
+              onClick={handleAddTask}
+              className="glass hover:glass-strong px-4 py-2 rounded-lg flex items-center space-x-2 transition-all"
+            >
               <Plus className="w-4 h-4" />
               <span>Add Task</span>
             </button>
@@ -268,7 +273,7 @@ export default function Index() {
       </main>
 
       {/* Voice Assistant */}
-      <VoiceAssistant onTranscript={handleVoiceTranscript} />
+      <VoiceAssistant onTaskUpdate={handleTaskUpdate} />
 
       {/* Background decoration */}
       <div className="fixed inset-0 -z-10 overflow-hidden">
