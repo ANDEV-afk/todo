@@ -84,26 +84,26 @@ export class HybridTaskProcessor {
 
     // Complete task patterns
     const completePatterns = [
-      // "mark [content] as done/complete"
-      /(?:mark|complete|finish)\s+(.+?)\s+as\s+(?:done|complete|finished)/i,
+      // "mark task [content]" or "mark [content]"
+      /(?:mark|complete|finish)\s+(?:task\s+)?(.+?)(?:\s+(?:as\s+)?(?:done|complete|finished))?$/i,
       // "complete task [content]"
       /(?:complete|finish|mark)\s+(?:the\s+)?task\s+(.+)/i,
-      // "mark [content] complete"
-      /mark\s+(.+?)\s+(?:complete|done|finished)/i,
-      // "[content] is done"
-      /(.+?)\s+is\s+(?:done|complete|finished)/i,
-      // "complete [content]"
-      /(?:complete|finish)\s+(.+)/i,
+      // "[content] done" or "[content] complete"
+      /(.+?)\s+(?:done|complete|finished)$/i,
+      // "mark [content] as done"
+      /mark\s+(.+?)\s+as\s+(?:done|complete|finished)/i,
+      // Simple "complete [content]"
+      /^(?:complete|finish)\s+(.+)/i,
     ];
 
     // Delete task patterns
     const deletePatterns = [
-      // "delete task [content]"
-      /(?:delete|remove|cancel)\s+(?:the\s+)?task\s+(.+)/i,
-      // "delete [content]"
-      /(?:delete|remove|cancel)\s+(.+)/i,
+      // "delete task [content]" or "delete [content]"
+      /(?:delete|remove|cancel)\s+(?:task\s+)?(.+)/i,
       // "remove the [content] task"
       /remove\s+(?:the\s+)?(.+?)\s+task/i,
+      // "[content] delete" or "[content] remove"
+      /(.+?)\s+(?:delete|remove)$/i,
     ];
 
     // Check add patterns
