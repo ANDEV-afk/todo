@@ -260,8 +260,11 @@ export function VoiceAssistant({
         <div className="mt-4 pt-4 border-t border-border/30">
           <div className="text-xs text-muted-foreground leading-relaxed">
             <div className="font-medium text-foreground mb-1">Try saying:</div>
-            "Mark task number 2", "Delete Buy groceries", "Add task review
-            report"
+            <div className="space-y-1">
+              <div>"Mark task number 2"</div>
+              <div>"Delete Buy groceries"</div>
+              <div>"Add task review report"</div>
+            </div>
           </div>
         </div>
       )}
