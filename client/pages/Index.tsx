@@ -87,32 +87,18 @@ export default function Index() {
     loadTasks();
   };
 
-  const handleCommand = (command: string) => {
-    const lowerCommand = command.toLowerCase();
+  const handleCommand = async (command: string) => {
+    try {
+      const result = await VoiceCommandProcessor.processVoiceCommand(command);
 
-    if (
-      lowerCommand.includes("add task") ||
-      lowerCommand.includes("new task")
-    ) {
-      handleAddTask();
-    } else if (
-      lowerCommand.includes("complete") ||
-      lowerCommand.includes("done")
-    ) {
-      // Mark first pending task as complete
-      const pendingTasks = StorageService.getTasksByStatus("pending");
-      if (pendingTasks.length > 0) {
-        handleStatusChange(pendingTasks[0].id, "completed");
+      if (result.success) {
+        loadTasks(); // Refresh the task list
+        console.log("Command executed:", result.message);
+      } else {
+        console.error("Command failed:", result.message);
       }
-    } else if (
-      lowerCommand.includes("delete") ||
-      lowerCommand.includes("remove")
-    ) {
-      // Delete most recent task
-      const allTasks = StorageService.getTasks();
-      if (allTasks.length > 0) {
-        handleDeleteTask(allTasks[0].id);
-      }
+    } catch (error) {
+      console.error("Error handling command:", error);
     }
   };
 
