@@ -32,6 +32,22 @@ export function VoiceAssistant({
   const [feedback, setFeedback] = useState("");
   const [error, setError] = useState("");
 
+  // Dialog states
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [showDisambiguation, setShowDisambiguation] = useState(false);
+  const [confirmationData, setConfirmationData] = useState<{
+    task?: Task;
+    action: "delete" | "modify";
+    message: string;
+    newContent?: string;
+  } | null>(null);
+  const [disambiguationData, setDisambiguationData] = useState<{
+    tasks: Task[];
+    query: string;
+    action: "complete" | "delete" | "modify";
+    message: string;
+  } | null>(null);
+
   useEffect(() => {
     setIsAvailable(voiceService.isSupported());
 
@@ -186,7 +202,7 @@ export function VoiceAssistant({
     if (state === "success") return "✅";
     if (state === "error") return "❌";
     if (state === "processing") return "🧠";
-    if (state === "listening") return "🎤";
+    if (state === "listening") return "���";
     return "🎙️";
   };
 
