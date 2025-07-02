@@ -8,7 +8,7 @@ import {
   Mic,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { HybridTaskProcessor } from "@/lib/hybrid-task-processor";
+import { SmartCommandProcessor } from "@/lib/smart-command-processor";
 import { StorageService } from "@/lib/storage-service";
 
 interface CommandInputProps {
@@ -57,7 +57,7 @@ export function CommandInput({
     setIsProcessing(true);
 
     try {
-      const result = HybridTaskProcessor.processCommand(commandText);
+      const result = SmartCommandProcessor.processCommand(commandText);
 
       if (result.success && result.createEditableTask && result.taskContent) {
         onTaskCreate?.(result.taskContent);
@@ -66,7 +66,7 @@ export function CommandInput({
         onTaskUpdate?.();
         console.log("Command executed successfully:", result.message);
       } else {
-        // For non-successful results, the HybridVoiceAssistant handles confirmations
+        // For non-successful results, the AdvancedVoiceAssistant handles confirmations
         console.log("Assistant response:", result.message);
       }
     } catch (error) {

@@ -2,11 +2,11 @@ import { useState, useEffect } from "react";
 import { Plus, Calendar } from "lucide-react";
 import { TaskCard, Task, TaskStatus } from "@/components/ui/task-card";
 import { EditableTaskCard } from "@/components/ui/editable-task-card";
-import { HybridVoiceAssistant } from "@/components/ui/hybrid-voice-assistant";
+import { AdvancedVoiceAssistant } from "@/components/ui/advanced-voice-assistant";
 import { CommandInput } from "@/components/ui/command-input";
 import { AppleNavbar } from "@/components/ui/apple-navbar";
 import { StorageService } from "@/lib/storage-service";
-import { HybridTaskProcessor } from "@/lib/hybrid-task-processor";
+import { SmartCommandProcessor } from "@/lib/smart-command-processor";
 import { useEditableTasks } from "@/hooks/use-editable-tasks";
 import { cn } from "@/lib/utils";
 
@@ -53,7 +53,7 @@ export default function Index() {
 
   const handleCommand = async (command: string) => {
     try {
-      const result = HybridTaskProcessor.processCommand(command);
+      const result = SmartCommandProcessor.processCommand(command);
 
       if (result.success && result.createEditableTask && result.taskContent) {
         // Create immediate editable task card
@@ -63,7 +63,7 @@ export default function Index() {
         loadTasks(); // Refresh for other operations
         console.log("Command executed:", result.message);
       } else {
-        // The HybridVoiceAssistant component will handle confirmations
+        // The AdvancedVoiceAssistant component will handle confirmations
         console.log("Assistant response:", result.message);
       }
     } catch (error) {
@@ -273,8 +273,8 @@ export default function Index() {
         </div>
       </main>
 
-      {/* Hybrid Voice Assistant */}
-      <HybridVoiceAssistant
+      {/* Advanced Voice Assistant */}
+      <AdvancedVoiceAssistant
         onTaskUpdate={handleTaskUpdate}
         onTaskCreate={createNewTask}
       />
