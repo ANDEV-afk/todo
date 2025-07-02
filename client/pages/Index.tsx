@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { Plus, Filter, Calendar, User, Settings, Bell } from "lucide-react";
 import { TaskCard, Task, TaskStatus } from "@/components/ui/task-card";
 import { VoiceAssistant } from "@/components/ui/voice-assistant";
@@ -114,9 +115,12 @@ export default function Index() {
               <button className="w-10 h-10 rounded-full glass flex items-center justify-center hover:glass-strong transition-all">
                 <Bell className="w-5 h-5 text-foreground" />
               </button>
-              <button className="w-10 h-10 rounded-full glass flex items-center justify-center hover:glass-strong transition-all">
+              <Link
+                to="/settings"
+                className="w-10 h-10 rounded-full glass flex items-center justify-center hover:glass-strong transition-all"
+              >
                 <Settings className="w-5 h-5 text-foreground" />
-              </button>
+              </Link>
               <div className="w-10 h-10 rounded-full bg-gradient-to-r from-purple-500 to-violet-500 flex items-center justify-center">
                 <User className="w-5 h-5 text-white" />
               </div>
