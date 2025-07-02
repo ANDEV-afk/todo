@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import { Plus, Filter, Calendar, User, Settings, Bell } from "lucide-react";
+import { Plus, Calendar } from "lucide-react";
 import { TaskCard, Task, TaskStatus } from "@/components/ui/task-card";
 import { VoiceAssistant } from "@/components/ui/voice-assistant";
 import { CommandInput } from "@/components/ui/command-input";
+import { AppleNavbar } from "@/components/ui/apple-navbar";
 import { StorageService } from "@/lib/storage-service";
 import { cn } from "@/lib/utils";
 
@@ -125,112 +125,96 @@ export default function Index() {
   const totalCount = tasks.length;
 
   return (
-    <div className="min-h-screen relative overflow-hidden">
+    <div className="min-h-screen relative">
       {/* Command Input */}
       <CommandInput onCommand={handleCommand} onTaskUpdate={handleTaskUpdate} />
 
-      {/* Header */}
-      <header className="relative z-30 pt-20 pb-8 px-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h1 className="text-4xl font-bold text-foreground mb-2">
-                Good morning! 👋
-              </h1>
-              <p className="text-lg text-muted-foreground">
-                You have{" "}
-                <span className="font-semibold text-primary">
-                  {tasks.length - completedCount}
-                </span>{" "}
-                tasks pending
-              </p>
-            </div>
+      {/* Apple-style Navbar */}
+      <AppleNavbar
+        title="Good morning! 👋"
+        subtitle={`You have ${tasks.length - completedCount} tasks pending`}
+      />
 
-            <div className="flex items-center space-x-4">
-              <button className="w-10 h-10 rounded-full glass flex items-center justify-center hover:glass-strong transition-all">
-                <Bell className="w-5 h-5 text-foreground" />
-              </button>
-              <Link
-                to="/settings"
-                className="w-10 h-10 rounded-full glass flex items-center justify-center hover:glass-strong transition-all"
-              >
-                <Settings className="w-5 h-5 text-foreground" />
-              </Link>
-              <div className="w-10 h-10 rounded-full bg-gradient-to-r from-purple-500 to-violet-500 flex items-center justify-center">
-                <User className="w-5 h-5 text-white" />
-              </div>
-            </div>
-          </div>
-
+      {/* Main Content */}
+      <main className="pt-32 pb-20">
+        <div className="max-w-7xl mx-auto px-6">
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-            <div className="glass rounded-2xl p-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+            <div className="glass-thin rounded-2xl p-6 apple-card border border-border/30">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Total Tasks</p>
-                  <p className="text-2xl font-bold text-foreground">
+                  <p className="text-sm text-muted-foreground font-medium">
+                    Total Tasks
+                  </p>
+                  <p className="text-3xl font-bold text-foreground font-display">
                     {totalCount}
                   </p>
                 </div>
-                <div className="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center">
-                  <Calendar className="w-6 h-6 text-blue-600" />
+                <div className="w-14 h-14 rounded-2xl bg-info/20 flex items-center justify-center shadow-sm">
+                  <Calendar className="w-7 h-7 text-info" />
                 </div>
               </div>
             </div>
 
-            <div className="glass rounded-2xl p-6">
+            <div className="glass-thin rounded-2xl p-6 apple-card border border-border/30">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Completed</p>
-                  <p className="text-2xl font-bold text-foreground">
+                  <p className="text-sm text-muted-foreground font-medium">
+                    Completed
+                  </p>
+                  <p className="text-3xl font-bold text-foreground font-display">
                     {completedCount}
                   </p>
                 </div>
-                <div className="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center">
-                  <span className="text-xl">✅</span>
+                <div className="w-14 h-14 rounded-2xl bg-success/20 flex items-center justify-center shadow-sm">
+                  <span className="text-2xl">✅</span>
                 </div>
               </div>
             </div>
 
-            <div className="glass rounded-2xl p-6">
+            <div className="glass-thin rounded-2xl p-6 apple-card border border-border/30">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">In Progress</p>
-                  <p className="text-2xl font-bold text-foreground">
+                  <p className="text-sm text-muted-foreground font-medium">
+                    In Progress
+                  </p>
+                  <p className="text-3xl font-bold text-foreground font-display">
                     {tasks.filter((t) => t.status === "in-progress").length}
                   </p>
                 </div>
-                <div className="w-12 h-12 rounded-full bg-orange-500/20 flex items-center justify-center">
-                  <span className="text-xl">⚡</span>
+                <div className="w-14 h-14 rounded-2xl bg-warning/20 flex items-center justify-center shadow-sm">
+                  <span className="text-2xl">⚡</span>
                 </div>
               </div>
             </div>
 
-            <div className="glass rounded-2xl p-6">
+            <div className="glass-thin rounded-2xl p-6 apple-card border border-border/30">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Completion</p>
-                  <p className="text-2xl font-bold text-foreground">
+                  <p className="text-sm text-muted-foreground font-medium">
+                    Completion
+                  </p>
+                  <p className="text-3xl font-bold text-foreground font-display">
                     {Math.round((completedCount / totalCount) * 100)}%
                   </p>
                 </div>
-                <div className="w-12 h-12 rounded-full bg-purple-500/20 flex items-center justify-center">
-                  <span className="text-xl">📊</span>
+                <div className="w-14 h-14 rounded-2xl bg-primary/20 flex items-center justify-center shadow-sm">
+                  <span className="text-2xl">📊</span>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Filters */}
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center space-x-2">
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center space-x-3">
               <button
                 onClick={() => setFilter("all")}
                 className={cn(
-                  "px-4 py-2 rounded-lg transition-all",
+                  "px-6 py-3 rounded-2xl transition-all duration-300 font-medium apple-button haptic-light",
                   filter === "all"
-                    ? "bg-primary text-primary-foreground"
-                    : "glass hover:glass-strong",
+                    ? "bg-primary text-primary-foreground shadow-lg"
+                    : "glass-thin hover:glass-regular border border-border/30",
                 )}
               >
                 All Tasks
@@ -238,10 +222,10 @@ export default function Index() {
               <button
                 onClick={() => setFilter("pending")}
                 className={cn(
-                  "px-4 py-2 rounded-lg transition-all",
+                  "px-6 py-3 rounded-2xl transition-all duration-300 font-medium apple-button haptic-light",
                   filter === "pending"
-                    ? "bg-primary text-primary-foreground"
-                    : "glass hover:glass-strong",
+                    ? "bg-primary text-primary-foreground shadow-lg"
+                    : "glass-thin hover:glass-regular border border-border/30",
                 )}
               >
                 Pending
@@ -249,10 +233,10 @@ export default function Index() {
               <button
                 onClick={() => setFilter("completed")}
                 className={cn(
-                  "px-4 py-2 rounded-lg transition-all",
+                  "px-6 py-3 rounded-2xl transition-all duration-300 font-medium apple-button haptic-light",
                   filter === "completed"
-                    ? "bg-primary text-primary-foreground"
-                    : "glass hover:glass-strong",
+                    ? "bg-primary text-primary-foreground shadow-lg"
+                    : "glass-thin hover:glass-regular border border-border/30",
                 )}
               >
                 Completed
@@ -261,19 +245,18 @@ export default function Index() {
 
             <button
               onClick={handleAddTask}
-              className="glass hover:glass-strong px-4 py-2 rounded-lg flex items-center space-x-2 transition-all"
+              className={cn(
+                "px-6 py-3 rounded-2xl flex items-center space-x-2 transition-all duration-300",
+                "bg-gradient-to-r from-primary to-accent text-white font-medium",
+                "apple-button haptic-medium shadow-lg hover:shadow-xl fab",
+              )}
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-5 h-5" />
               <span>Add Task</span>
             </button>
           </div>
-        </div>
-      </header>
-
-      {/* Task Grid */}
-      <main className="px-6 pb-20">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {/* Task Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredTasks.map((task) => (
               <TaskCard
                 key={task.id}
@@ -287,14 +270,14 @@ export default function Index() {
 
           {filteredTasks.length === 0 && (
             <div className="text-center py-20">
-              <div className="glass rounded-2xl p-12 max-w-md mx-auto">
-                <div className="text-6xl mb-4">🎉</div>
-                <h3 className="text-xl font-semibold text-foreground mb-2">
+              <div className="glass-regular rounded-3xl p-16 max-w-md mx-auto border border-border/30 apple-card">
+                <div className="text-8xl mb-6 animate-bounce-gentle">🎉</div>
+                <h3 className="text-2xl font-bold text-foreground mb-3 font-display">
                   {filter === "completed"
                     ? "No completed tasks yet"
                     : "All caught up!"}
                 </h3>
-                <p className="text-muted-foreground">
+                <p className="text-muted-foreground text-lg">
                   {filter === "completed"
                     ? "Complete some tasks to see them here"
                     : "You have no pending tasks. Great job!"}
@@ -308,16 +291,16 @@ export default function Index() {
       {/* Voice Assistant */}
       <VoiceAssistant onTaskUpdate={handleTaskUpdate} />
 
-      {/* Background decoration */}
-      <div className="fixed inset-0 -z-10 overflow-hidden">
-        <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-purple-500/10 rounded-full blur-3xl animate-float" />
+      {/* Background Decoration */}
+      <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-br from-primary/5 to-accent/5 rounded-full blur-3xl animate-float-gentle" />
         <div
-          className="absolute top-3/4 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-float"
-          style={{ animationDelay: "1s" }}
+          className="absolute top-3/4 right-1/4 w-[32rem] h-[32rem] bg-gradient-to-br from-info/5 to-success/5 rounded-full blur-3xl animate-float-gentle"
+          style={{ animationDelay: "2s" }}
         />
         <div
-          className="absolute top-1/2 left-1/2 w-80 h-80 bg-pink-500/10 rounded-full blur-3xl animate-float"
-          style={{ animationDelay: "2s" }}
+          className="absolute top-1/2 left-1/2 w-80 h-80 bg-gradient-to-br from-accent/5 to-warning/5 rounded-full blur-3xl animate-float-gentle"
+          style={{ animationDelay: "4s" }}
         />
       </div>
     </div>
