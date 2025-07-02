@@ -14,6 +14,7 @@ import { StorageService } from "@/lib/storage-service";
 interface CommandInputProps {
   onCommand?: (command: string) => void;
   onTaskUpdate?: () => void;
+  onTaskCreate?: (taskContent: string) => void;
   placeholder?: string;
   className?: string;
 }
@@ -44,6 +45,7 @@ const quickActions = [
 export function CommandInput({
   onCommand,
   onTaskUpdate,
+  onTaskCreate,
   placeholder = "What would you like to do?",
   className,
 }: CommandInputProps) {
@@ -57,7 +59,10 @@ export function CommandInput({
     try {
       const result = HybridTaskProcessor.processCommand(commandText);
 
-      if (result.success) {
+      if (result.success && result.createEditableTask && result.taskContent) {
+        onTaskCreate?.(result.taskContent);
+        console.log("Created editable task:", result.message);
+      } else if (result.success) {
         onTaskUpdate?.();
         console.log("Command executed successfully:", result.message);
       } else {

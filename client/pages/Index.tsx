@@ -84,7 +84,11 @@ export default function Index() {
   return (
     <div className="min-h-screen relative">
       {/* Command Input */}
-      <CommandInput onCommand={handleCommand} onTaskUpdate={handleTaskUpdate} />
+      <CommandInput
+        onCommand={handleCommand}
+        onTaskUpdate={handleTaskUpdate}
+        onTaskCreate={createNewTask}
+      />
 
       {/* Apple-style Navbar */}
       <AppleNavbar
