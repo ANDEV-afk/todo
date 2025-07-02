@@ -47,17 +47,15 @@ export function CommandInput({
     setIsProcessing(true);
 
     try {
-      // Use the enhanced voice command processor
-      const result =
-        await VoiceCommandProcessor.processVoiceCommand(commandText);
+      const result = await SmartTaskAssistant.processCommand(commandText);
 
       if (result.success) {
         onTaskUpdate?.();
-        // Show success feedback briefly
         console.log("Command executed successfully:", result.message);
       } else {
-        // Show error feedback
-        console.error("Command failed:", result.message);
+        // For non-successful results, we'd need to handle dialogs here too
+        // For now, just log the conversational message
+        console.log("Assistant response:", result.message);
       }
     } catch (error) {
       console.error("Error processing command:", error);
